@@ -3,30 +3,36 @@ import { FaUsers, FaCheckCircle } from 'react-icons/fa'
 import { useAdmin } from '../../contexts/AdminContext'
 
 const ManageGroups = () => {
-  const { projectGroups } = useAdmin()
+  const { projectGroups,GuideprojectGroups } = useAdmin()
   const [currentUser, setCurrentUser] = useState(null)
   const [myGroups, setMyGroups] = useState([])
+  // console.log(GuideprojectGroups,"my ");
+  
+
 
   useEffect(() => {
     const userData = localStorage.getItem('user')
     if (userData) {
       try {
-        const parsedUser = JSON.parse(userData)
-        if (parsedUser.role === 'guide') {
-          setCurrentUser(parsedUser)
-          // Filter groups assigned to this guide
-          const assignedGroups = projectGroups.filter(
-            group => group.assignedGuide === parsedUser.id && group.status === 'Accepted'
-          )
-          setMyGroups(assignedGroups)
-        }
+        // const parsedUser = JSON.parse(userData)
+        // if (parsedUser.role === 'guide') {
+        //   setCurrentUser(parsedUser)
+        //   // Filter groups assigned to this guide
+        //   const assignedGroups = GuideprojectGroups.filter(
+        //     group => group.assignedGuide === parsedUser.id && group.status === 'Accepted'
+        //   )
+          
+   
+        // }
+               setMyGroups(GuideprojectGroups)
       } catch (error) {
         console.error('Error parsing user data:', error)
       }
+      
     }
-  }, [projectGroups])
+  }, [GuideprojectGroups])
 
-  if (!currentUser) {
+  if (!myGroups) {
     return (
       <div className="flex items-center justify-center min-h-[40vh] text-slate-500">
         Loading...
@@ -70,9 +76,9 @@ const ManageGroups = () => {
               </div>
 
               <div className="border-t border-slate-200 pt-4">
-                <h4 className="text-sm font-semibold text-slate-700 mb-3">Members ({group.members.length}):</h4>
+                <h4 className="text-sm font-semibold text-slate-700 mb-3">Members ({group.selectedMembers.length}):</h4>
                 <ul className="space-y-2">
-                  {group.members.map((member) => (
+                  {group.selectedMembers.map((member) => (
                     <li key={member.id} className="text-sm text-slate-600 flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full bg-blue-500"></div>
                       <span>{member.name}</span>

@@ -28,27 +28,27 @@ const AddTask = () => {
   =============================== */
 
 
-  const downloadFile = async (filePath, fileName) => {
-    try {
-      const response = await fetch(`http://localhost:5000/${filePath}`);
+  // const downloadFile = async (filePath, fileName) => {
+  //   try {
+  //     const response = await fetch(`http://localhost:5000/${filePath}`);
 
-      const blob = await response.blob();
+  //     const blob = await response.blob();
 
-      const url = window.URL.createObjectURL(blob);
+  //     const url = window.URL.createObjectURL(blob);
 
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = fileName; // force download name
+  //     const a = document.createElement("a");
+  //     a.href = url;
+  //     a.download = fileName; // force download name
 
-      document.body.appendChild(a);
-      a.click();
+  //     document.body.appendChild(a);
+  //     a.click();
 
-      a.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error("Download failed:", err);
-    }
-  };
+  //     a.remove();
+  //     window.URL.revokeObjectURL(url);
+  //   } catch (err) {
+  //     console.error("Download failed:", err);
+  //   }
+  // };
 
   useEffect(() => {
     // const userData = localStorage.getItem('user')
@@ -270,38 +270,29 @@ const AddTask = () => {
 
   const handleFinalReportDeadline = () => {
     if (!selectedGroupId) {
-      alert('Please select a group first')
-      return
+      alert("Please select a group first");
+      return;
     }
 
     if (!finalReportDeadline) {
-      alert('Please select a deadline for the final report')
-      return
+      alert("Please select a deadline for the final report");
+      return;
     }
 
-    setSaving(true)
+    setSaving(true);
 
-    if (finalReportTask) {
-      // Update existing final report task
-      updateTask(finalReportTask._id, {
-        submissionDate: finalReportDeadline,
-        // assignedBy: currentUser.id
-      })
-      alert('Final report deadline updated!')
-    } else {
-      // Create new final report task
-      addTask({
-        taskName: 'Final Report Submission',
-        groupId: selectedGroupId,
-        submissionDate: finalReportDeadline,
-        // assignedBy: currentUser.id,
-        status: 'Pending'
-      })
-      alert('Final report task created!')
-    }
+    // ✅ Always create new task (no condition)
+    addTask({
+      taskName: "Final Report Submission",
+      groupId: selectedGroupId,
+      submissionDate: finalReportDeadline,
+      status: "Pending",
+    });
 
-    setSaving(false)
-  }
+    alert("Final report task created!");
+
+    setSaving(false);
+  };
 
   const handleMarkChange = (groupId, mark) => {
     setFinalMarks(prev => ({
@@ -321,7 +312,7 @@ const AddTask = () => {
       alert('Please enter a valid mark between 0 and 100')
       return
     }
-console.log(finalReportTask,"task reprt");
+    console.log(finalReportTask, "task reprt");
 
     if (!finalReportTask || !finalReportTask.submittedFileName) {
       alert('No final report has been submitted yet')
@@ -388,7 +379,7 @@ console.log(finalReportTask,"task reprt");
         </label>
         <select
           value={selectedGroupId ?? ''}
-          onChange={e => setSelectedGroupId(Number(e.target.value))} // ✅ FIX
+          onChange={e => setSelectedGroupId(e.target.value)} // ✅ FIX
           className="w-full p-3 border border-gray-400 outline-none rounded-lg text-gray-700"
         >
           <option value="">-- Select Group --</option>
@@ -517,14 +508,14 @@ console.log(finalReportTask,"task reprt");
                         </span>
                       </p>
                     </div>
-                     <a
-                          href={`http://localhost:5000/${finalReportTask.submittedFileName}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 px-3 py-1 mt-2 text-xs font-medium text-blue-700 bg-blue-100 rounded-md hover:bg-blue-200 transition-colors"
-                        >
-                            Download Final Report
-                        </a>
+                    <a
+                      href={`http://localhost:5000/${finalReportTask.submittedFileName}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 px-3 py-1 mt-2 text-xs font-medium text-blue-700 bg-blue-100 rounded-md hover:bg-blue-200 transition-colors"
+                    >
+                      Download Final Report
+                    </a>
                   </div>
 
                   {/* Mark Entry Section */}
@@ -661,7 +652,7 @@ console.log(finalReportTask,"task reprt");
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 px-3 py-1 mt-2 text-xs font-medium text-blue-700 bg-blue-100 rounded-md hover:bg-blue-200 transition-colors"
                         >
-                            Download File
+                          Download File
                         </a>
                       </div>
                     )}

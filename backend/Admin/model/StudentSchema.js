@@ -35,6 +35,11 @@ const studentSchema = new mongoose.Schema(
       unique: true,
       trim: true,
     },
+     profileImage: {
+      type: String,
+      default: null,
+    },
+
 
     year: {
       type: String,

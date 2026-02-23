@@ -11,6 +11,9 @@ const ProjectGroups = () => {
     [departments]
   )
 
+
+  
+
   const groupsWithMeta = useMemo(() => {
     const list = [...(projectGroups || [])]
 
@@ -24,7 +27,7 @@ const ProjectGroups = () => {
     return list.map(group => {
       const department = group?.members?.[0]?.department || '—'
       const guide =
-        guides?.find(g => g.id === group.assignedGuide) || null
+        guides?.find(g => g._id === group.assignedGuide) || null
 
       return {
         ...group,
@@ -36,7 +39,7 @@ const ProjectGroups = () => {
 
   const filteredGroups = useMemo(() => {
     if (departmentFilter === 'ALL') return groupsWithMeta
-    return groupsWithMeta.filter(g => g._department === departmentFilter)
+    return groupsWithMeta.filter(g => g.department === departmentFilter)
   }, [groupsWithMeta, departmentFilter])
 
   return (
@@ -81,17 +84,17 @@ const ProjectGroups = () => {
           <div className="grid gap-5 md:grid-cols-2">
             {filteredGroups.map(group => (
               <div
-                key={group.id}
+                key={group._id}
                 className="bg-white rounded-lg shadow-sm border border-gray-200 p-6"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <h2 className="text-xl font-semibold text-gray-900">
-                      {group.name}
+                      {group.groupName}
                     </h2>
                     <p className="text-sm text-gray-600 mt-1">
                       <span className="font-medium">Department:</span>{' '}
-                      {group._department}
+                      {group.department}
                     </p>
                     <p className="text-sm text-gray-600">
                       <span className="font-medium">Status:</span>{' '}
@@ -120,17 +123,17 @@ const ProjectGroups = () => {
 
                 <div className="mt-5">
                   <h3 className="text-sm font-semibold text-gray-800 mb-2">
-                    Members ({group.members?.length || 0})
+                    Members ({group.selectedMembers?.length || 0})
                   </h3>
                   <div className="border border-gray-200 rounded-md divide-y">
-                    {(group.members || []).map(m => (
+                    {(group.selectedMembers|| []).map(m => (
                       <div
-                        key={m.id}
+                        key={m._id}
                         className="px-3 py-2 text-sm text-gray-700 flex flex-wrap items-center gap-x-2 gap-y-1"
                       >
                         <span className="font-medium">{m.name}</span>
                         <span className="text-gray-500">
-                          ({m.username})
+                          ({m.name})
                         </span>
                         <span className="text-gray-400">•</span>
                         <span className="text-gray-600">

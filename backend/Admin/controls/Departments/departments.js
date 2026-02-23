@@ -5,7 +5,9 @@ import Department from "../../model/DepartmentSchema.js";
 const requireAdmin = (req, res) => {
  
   
-  const { role } = req.user.id.id;
+  const { role } = req.user.id;
+  console.log(role,"role");
+  
   if (role !== "admin") {
     res.status(403).json({ message: "Access denied. Admins only." });
     return false;

@@ -3,7 +3,7 @@ import { FaUser, FaEnvelope, FaIdCard, FaBuilding, FaPhone, FaMapMarkerAlt, FaCa
 import { useAdmin } from '../../contexts/AdminContext'
 
 const StudentProfile = () => {
-  const { updateProfile, getProfile } = useAdmin()
+  const {updateStudentProfile, Studentprofiles } = useAdmin()
   const [currentUser, setCurrentUser] = useState(null)
   const [profileData, setProfileData] = useState({
     dob: '',
@@ -18,34 +18,42 @@ const StudentProfile = () => {
   const [message, setMessage] = useState({ type: '', text: '' })
 
   useEffect(() => {
-    const userData = localStorage.getItem('user')
-    if (!userData) return
+    // const userData = localStorage.getItem('user')
+    // if (!userData) return
 
     try {
-      const user = JSON.parse(userData)
-      if (user.role !== 'student') return
+      // const user = JSON.parse(userData)
+      // if (user.role !== 'student') return
 
-      setCurrentUser(user)
+      setCurrentUser(Studentprofiles)
 
-      const existingProfile = getProfile(user.id)
-      if (existingProfile) {
-        setProfileData({
-          dob: existingProfile.dob || '',
-          phone: existingProfile.phone || '',
-          place: existingProfile.place || '',
-          address: existingProfile.address || '',
-          registerNumber: existingProfile.registerNumber || '',
-          profileImage: existingProfile.profileImage || ''
-        })
+      // const existingProfile = getProfile(user.id)
+      // if (existingProfile) {
+      //   setProfileData({
+      //     dob: existingProfile.dob || '',
+      //     phone: existingProfile.phone || '',
+      //     place: existingProfile.place || '',
+      //     address: existingProfile.address || '',
+      //     registerNumber: existingProfile.registerNumber || '',
+      //     profileImage: existingProfile.profileImage || ''
+      //   })
 
-        if (existingProfile.profileImage) {
-          setImagePreview(existingProfile.profileImage)
-        }
-      }
+      //   if (existingProfile.profileImage) {
+
+      //   }
+      // }
+      setImagePreview(
+        Studentprofiles.profileImage
+          ? `http://localhost:5000/uploads/${Studentprofiles.profileImage}`
+          : ""
+      );
+
     } catch (err) {
       console.error('User parse error:', err)
     }
-  }, [getProfile])
+  }, [Studentprofiles])
+
+
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -56,31 +64,37 @@ const StudentProfile = () => {
   }
 
   const handleImageUpload = (e) => {
-    const file = e.target.files[0]
-    if (!file) return
+    const file = e.target.files[0];
+    if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
-      setMessage({ type: 'error', text: 'Please upload valid image file' })
-      return
+    // ✅ Validate file type
+    if (!file.type.startsWith("image/")) {
+      setMessage({
+        type: "error",
+        text: "Please upload a valid image file (JPG, PNG, etc.)",
+      });
+      return;
     }
 
+    // ✅ Validate file size (2MB)
     if (file.size > 2 * 1024 * 1024) {
-      setMessage({ type: 'error', text: 'Image must be less than 2MB' })
-      return
+      setMessage({
+        type: "error",
+        text: "Image size should be less than 2MB",
+      });
+      return;
     }
 
-    const reader = new FileReader()
-    reader.onloadend = () => {
-      const base64String = reader.result
-      setProfileData(prev => ({
-        ...prev,
-        profileImage: base64String
-      }))
-      setImagePreview(base64String)
-    }
+    // ✅ Store FILE OBJECT directly (IMPORTANT)
+    setProfileData((prev) => ({
+      ...prev,
+      profileImage: file,
+    }));
 
-    reader.readAsDataURL(file)
-  }
+    // ✅ Create preview URL (no base64 needed)
+    const previewUrl = URL.createObjectURL(file);
+    setImagePreview(previewUrl);
+  };
 
   const handleSaveProfile = () => {
     if (profileData.phone && !/^\d{10}$/.test(profileData.phone.replace(/\s/g, ''))) {
@@ -91,7 +105,7 @@ const StudentProfile = () => {
     setSaving(true)
 
     try {
-      updateProfile(currentUser.id, profileData)
+       updateStudentProfile(currentUser.id, profileData)
       setMessage({ type: 'success', text: 'Profile updated successfully!' })
 
       setTimeout(() => {
@@ -198,8 +212,8 @@ const StudentProfile = () => {
         {/* Message */}
         {message.text && (
           <div className={`mt-6 p-4 rounded-lg ${message.type === 'success'
-              ? 'bg-green-100 text-green-700'
-              : 'bg-red-100 text-red-700'
+            ? 'bg-green-100 text-green-700'
+            : 'bg-red-100 text-red-700'
             }`}>
             {message.text}
           </div>

@@ -29,9 +29,11 @@ export const AdminProvider = ({ children }) => {
   const [studentId, setStudentId] = useState()
   const [guides, setGuides] = useState([])
   const [projectGroups, setProjectGroups] = useState([])
+  const [GuideprojectGroups, setGuideProjectGroups] = useState([])
   const [notifications, setNotifications] = useState([])
   const [tasks, setTasks] = useState([])
   const [profiles, setProfiles] = useState([])
+  const [Studentprofiles, setStudentProfiles] = useState([])
   const [reload, setReload] = useState(false)
 
 
@@ -43,12 +45,15 @@ export const AdminProvider = ({ children }) => {
   // useEffect(() => { saveToStorage(STORAGE_KEYS.PROJECT_GROUPS, projectGroups) }, [projectGroups])
   useEffect(() => { saveToStorage(STORAGE_KEYS.NOTIFICATIONS, notifications) }, [notifications])
   // useEffect(() => { saveToStorage(STORAGE_KEYS.TASKS, tasks) }, [tasks])
-  useEffect(() => { saveToStorage(STORAGE_KEYS.PROFILES, profiles) }, [profiles])
+  // useEffect(() => { saveToStorage(STORAGE_KEYS.PROFILES, profiles) }, [profiles])
 
   const getCurrentAcademicYear = () => {
     const y = new Date().getFullYear()
     return `${y}-${y + 1}`
   }
+
+
+
 
 
 
@@ -364,6 +369,73 @@ export const AdminProvider = ({ children }) => {
   }, []);
 
 
+  useEffect(() => {
+    const fetchGuideGroup = async () => {
+      try {
+        const res = await axios.get("/getGuideAccetedGrp", {
+          withCredentials: true   // ✅ send cookies/session
+        });
+
+        // console.log(res, "group res");
+
+        if (res?.data) {
+          setGuideProjectGroups(res.data?.data);
+          // setNotifications(res.data?.data)
+        }
+      } catch (error) {
+        console.error("Error fetching groups:", error);
+      }
+    };
+
+    fetchGuideGroup(); // ✅ IMPORTANT: call the function
+  }, []);
+
+
+  // Get Guide Profile 
+
+  useEffect(() => {
+    const fetchGuideProfile = async () => {
+      try {
+        const res = await axios.get(
+          "/getGuideProfile",
+          {
+            withCredentials: true, // ✅ VERY IMPORTANT for JWT cookies
+          }
+        );
+        // console.log(res,"guide profile");
+
+
+        setProfiles(res.data.data);
+      } catch (error) {
+        console.error("Error fetching guide profile:", error);
+      }
+    };
+
+    fetchGuideProfile();
+  }, []);
+
+
+  useEffect(() => {
+    const fetchStudentProfile = async () => {
+      try {
+        const res = await axios.get(
+          "/getSudentProfile",
+          {
+            withCredentials: true, // ✅ VERY IMPORTANT for JWT cookies
+          }
+        );
+        // console.log(res,"student profile");
+
+
+        setStudentProfiles(res.data.data);
+      } catch (error) {
+        console.error("Error fetching guide profile:", error);
+      }
+    };
+
+    fetchStudentProfile()
+  }, []);
+
 
   const importStudentsFromCSV = (csvData) => {
     const academicYear = getCurrentAcademicYear()
@@ -518,7 +590,7 @@ export const AdminProvider = ({ children }) => {
 
 
   const createProjectGroup = async (groupName, members, topicName = '') => {
-    console.log(members, "membres");
+    // console.log(members, "membres");
 
     try {
       const payload = {
@@ -777,20 +849,89 @@ export const AdminProvider = ({ children }) => {
     }
   };
   // Profile Functions
-  const updateProfile = (userId, profileData) => {
-    setProfiles(prev => ({
-      ...prev,
-      [userId]: {
-        ...prev[userId],
-        ...profileData,
-        updatedAt: new Date().toISOString()
-      }
-    }))
-  }
 
-  const getProfile = (userId) => {
-    return profiles[userId] || null
-  }
+
+  const updateProfile = async (userId, profileData) => {
+    // console.log(profileData, "prifile dat");
+
+    try {
+      const formData = new FormData();
+
+      // ✅ append text fields
+      formData.append("dob", profileData.dob);
+      formData.append("phone", profileData.phone);
+      formData.append("place", profileData.place);
+      formData.append("address", profileData.address);
+      formData.append("teacherId", profileData.teacherId);
+
+      // ✅ append image ONLY if selected
+      if (profileData.profileImage) {
+        formData.append("file", profileData.profileImage);
+      }
+
+      const res = await axios.put(
+        `/updateGuideProfile`,
+        formData,
+        {
+          withCredentials: true,
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      console.log("Profile updated:", res.data);
+
+      return res.data;
+
+    } catch (error) {
+      console.error("Update profile error:", error);
+      return null;
+    }
+  };
+
+  const updateStudentProfile = async (userId, profileData) => {
+    console.log(profileData, "prifile dat");
+
+    try {
+      const formData = new FormData();
+
+      // ✅ append text fields
+      formData.append("dob", profileData.dob);
+      formData.append("phone", profileData.phone);
+      formData.append("place", profileData.place);
+      formData.append("address", profileData.address);
+      formData.append("teacherId", profileData.teacherId);
+
+      // ✅ append image ONLY if selected
+      if (profileData.profileImage) {
+        formData.append("file", profileData.profileImage);
+      }
+
+      const res = await axios.put(
+        `/update-Student-Profile`,
+        formData,
+        {
+          withCredentials: true,
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+
+      console.log("Profile updated:", res.data);
+
+      return res.data;
+
+    } catch (error) {
+      console.error("Update profile error:", error);
+      return null;
+    }
+  };
+
+  // const getProfile = (userId) => {
+  //   return profiles[userId] || null
+  // }
 
   const value = {
     departments,
@@ -799,9 +940,11 @@ export const AdminProvider = ({ children }) => {
     studentId,
     guides,
     projectGroups,
+    GuideprojectGroups,
     notifications,
     tasks,
     profiles,
+    Studentprofiles,
     getCurrentAcademicYear,
     addDepartment,
     updateDepartment,
@@ -831,7 +974,8 @@ export const AdminProvider = ({ children }) => {
     submitTaskFile,
     reviewTask,
     updateProfile,
-    getProfile,
+    updateStudentProfile,
+    // getProfile,
     clearAllData
   }
 

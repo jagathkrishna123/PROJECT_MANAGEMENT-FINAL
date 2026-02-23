@@ -35,7 +35,7 @@ export const addStudent = async (req, res) => {
 
       return res.status(400).json({ message: "Email, username, or roll number already exists." });
     }
-        const Guideexists = await Guide.findOne({ $or: [{ email }, { username }, { rollNo }] });
+    const Guideexists = await Guide.findOne({ $or: [{ email }, { username }, { rollNo }] });
     if (Guideexists) {
 
 
@@ -142,7 +142,7 @@ export const editStudent = async (req, res) => {
 
       if (existing) {
 
-console.log("existung stu");
+        console.log("existung stu");
 
         return res.status(400).json({
           message: "Email or username already exists."
@@ -151,23 +151,23 @@ console.log("existung stu");
     }
 
     if (email || username) {
-  const existing = await Guide.findOne({
-    _id: { $ne: id },   // exclude current guide while updating
-    $or: [
-      email ? { email: email.toLowerCase() } : null,
-      username ? { username } : null
-    ].filter(Boolean)
-  });
+      const existing = await Guide.findOne({
+        _id: { $ne: id },   // exclude current guide while updating
+        $or: [
+          email ? { email: email.toLowerCase() } : null,
+          username ? { username } : null
+        ].filter(Boolean)
+      });
 
-  if (existing) {
-    // console.log("existing guide");
-    
-    return res.status(400).json({
-      success: false,
-      message: "Guide email or username already exists."
-    });
-  }
-}
+      if (existing) {
+        // console.log("existing guide");
+
+        return res.status(400).json({
+          success: false,
+          message: "Guide email or username already exists."
+        });
+      }
+    }
 
     // ✅ Update student
     const updatedStudent = await Student.findByIdAndUpdate(
@@ -218,38 +218,38 @@ export const getStudents = async (req, res) => {
 
 
     // ✅ If user logged in → fetch only that student
-// ✅ If user logged in → fetch only that student
-// if (role === "Student" && id) {
-//   const student = await Student.find().lean();
+    // ✅ If user logged in → fetch only that student
+    // if (role === "Student" && id) {
+    //   const student = await Student.find().lean();
 
-//   if (!student) {
-//     return res.status(404).json({
-//       success: false,
-//       message: "Student not found"
-//     });
-//   }
+    //   if (!student) {
+    //     return res.status(404).json({
+    //       success: false,
+    //       message: "Student not found"
+    //     });
+    //   }
 
-//   // ⭐ CHECK if student already in any group
-//   const existingGroup = await Group.findOne({
-//     "selectedMembers._id": id
-//   });
+    //   // ⭐ CHECK if student already in any group
+    //   const existingGroup = await Group.findOne({
+    //     "selectedMembers._id": id
+    //   });
 
-//   if (existingGroup) {
-//     return res.status(400).json({
-//       success: false,
-//       message: "Student already assigned to a group",
-//       groupName: existingGroup.groupName
-//     });
-//   }
+    //   if (existingGroup) {
+    //     return res.status(400).json({
+    //       success: false,
+    //       message: "Student already assigned to a group",
+    //       groupName: existingGroup.groupName
+    //     });
+    //   }
 
-//   // ✅ If not in any group → send student
-//   return res.status(200).json({
-//     success: true,
-//     data: student,
-//     department: department,
-//     studentId: id
-//   });
-// }
+    //   // ✅ If not in any group → send student
+    //   return res.status(200).json({
+    //     success: true,
+    //     data: student,
+    //     department: department,
+    //     studentId: id
+    //   });
+    // }
 
 
     // ✅ If no user id → fetch all students
@@ -271,6 +271,133 @@ export const getStudents = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Server error"
+    });
+  }
+};
+
+
+export const getSudentProfile = async (req, res) => {
+  try {
+    // ✅ Logged-in guide ID from JWT middleware
+    const studentId = req.user.id?.id;
+
+   
+
+    if (!studentId) {
+      return res.status(400).json({
+        success: false,
+        message: "Student ID not found in request"
+      });
+    }
+
+    // ✅ Fetch guide details
+    const student = await Student.findById(studentId)
+      .select("-password") // hide password field
+      .lean();
+
+    if (!student) {
+      return res.status(404).json({
+        success: false,
+        message: "Student not found"
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: student
+    });
+
+  } catch (error) {
+    console.error("Error fetching Student profile:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Server error while fetching Student profile"
+    });
+  }
+};
+
+
+export const updateStudentProfile = async (req, res) => {
+  try {
+    const studentId = req.user.id?.id;
+ console.log(studentId, "student");
+    if (!studentId) {
+      return res.status(400).json({
+        success: false,
+        message: "Student ID not found",
+      });
+    }
+
+    // ✅ Extract text fields from FormData
+    const {
+      name,
+      email,
+      username,
+      department,
+      specialization,
+      dob,
+      phone,
+      place,
+      address,
+      teacherId,
+    } = req.body;
+
+    console.log(req.body, "bodd");
+
+
+    const updateData = {};
+
+    // ✅ Basic profile fields
+    if (name) updateData.name = name;
+    if (email) updateData.email = email;
+    if (username) updateData.username = username;
+    if (department) updateData.department = department;
+    if (specialization) updateData.specialization = specialization;
+
+    // ✅ Extra profile fields
+    if (dob) updateData.dob = dob;
+    if (phone) updateData.phone = phone;
+    if (place) updateData.place = place;
+    if (address) updateData.address = address;
+    if (teacherId) updateData.teacherId = teacherId;
+
+    // ✅ Handle uploaded image
+    // console.log(req.file, "file");
+
+    if (req.file) {
+      updateData.profileImage = req.file.filename;
+    }
+
+    // ✅ Update in DB
+    const updatedGuide = await Student.findByIdAndUpdate(
+      studentId,
+      updateData,
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    if (!updatedGuide) {
+      return res.status(404).json({
+        success: false,
+        message: "Student not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Profile updated successfully",
+      data: updatedGuide,
+    });
+
+  } catch (error) {
+    console.error("Update Student Profile Error:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Server error while updating profile",
     });
   }
 };

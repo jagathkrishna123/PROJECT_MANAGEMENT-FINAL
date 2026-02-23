@@ -15,8 +15,8 @@ const generateToken = (adminId, role) => {
 export const createAdmin = async (req, res) => {
   // const { userName, email } = req.body;
 
-  const userName = "Nabeel"
-  const email = "n@gmail.com"
+  const userName = "Admin"
+  const email = "admin@gmail.com"
   try {
     // Validation: check userName
     if (!userName || userName.trim().length < 3) {

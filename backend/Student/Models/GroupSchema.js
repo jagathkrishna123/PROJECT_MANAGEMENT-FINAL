@@ -33,6 +33,9 @@ const groupSchema = new mongoose.Schema(
       // required: true
       default: null
     },
+    teacherName: {
+      type: String
+    },
     rejectedTeachers: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -48,6 +51,11 @@ const groupSchema = new mongoose.Schema(
           required: true
         },
         name: {
+          type: String,
+          required: true,
+          trim: true
+        },
+          email: {
           type: String,
           required: true,
           trim: true

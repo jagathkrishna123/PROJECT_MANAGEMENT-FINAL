@@ -5,25 +5,49 @@ import { FaDownload, FaUsers, FaTrophy, FaSearch, FaCalendar } from 'react-icons
 const Projects = () => {
     const { tasks, projectGroups } = useAdmin()
     const [searchTerm, setSearchTerm] = useState('')
+    console.log(projectGroups, "project");
+    console.log(tasks, "tsss");
+
+
 
     // Get all published final reports
-    const publishedProjects = tasks.filter(
-        task => task.taskName === 'Final Report Submission' &&
-            task.isPublished === true &&
-            task.submittedFile
-    )
+    const publishedProjects = tasks
+        .filter(
+            task =>
+                task.taskName === "Final Report Submission" &&
+                task.status === "Verified" &&
+                task.submittedFileName
+        )
+        .map(task => {
+            const group = projectGroups.find(g => g._id === task.groupId);
+
+            return {
+                ...task,
+                groupInfo: group || null
+            };
+        });
+    console.log(publishedProjects, "publis");
+
 
     // Filter projects based on search term
     const filteredProjects = publishedProjects.filter(project => {
-        const groupName = project.groupInfo?.name || ''
-        const topicName = project.groupInfo?.topicName || ''
-        const members = project.groupInfo?.members?.map(m => m.name).join(' ') || ''
-        const searchLower = searchTerm.toLowerCase()
+        const groupName = project.groupInfo?.groupName || "";
+        const topicName = project.groupInfo?.topicName || "";
+        const members =
+            project.groupInfo?.selectedMembers
+                ?.map(m => m.name)
+                .join(" ") || "";
 
-        return groupName.toLowerCase().includes(searchLower) ||
+        const searchLower = searchTerm.toLowerCase();
+
+        return (
+            groupName.toLowerCase().includes(searchLower) ||
             topicName.toLowerCase().includes(searchLower) ||
             members.toLowerCase().includes(searchLower)
-    })
+        );
+    });
+    console.log(filteredProjects, "filter");
+
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
@@ -79,7 +103,7 @@ const Projects = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                             {filteredProjects.map((project) => (
                                 <div
-                                    key={project.id}
+                                    key={project._id}
                                     className="bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-blue-300 transform hover:-translate-y-1"
                                 >
                                     {/* Project Header */}
@@ -88,12 +112,15 @@ const Projects = () => {
                                             {project.groupInfo?.topicName || 'Untitled Project'}
                                         </h3>
                                         <p className="text-sm font-medium text-blue-100 mb-2 opacity-90">
-                                            {project.groupInfo?.name || 'Project Group'}
+                                            {project.groupInfo?.groupName || 'Project Group'}
+                                        </p>
+                                        <p className="text-sm font-medium text-blue-100 mb-2 opacity-90">
+                                            {project.groupInfo?.department || 'Project Group'}
                                         </p>
                                         <div className="flex items-center gap-2 text-blue-100">
                                             <FaCalendar className="text-sm" />
                                             <span className="text-sm">
-                                                Published: {new Date(project.publishedAt).toLocaleDateString()}
+                                                Published: {new Date(project.submissionDate).toLocaleDateString()}
                                             </span>
                                         </div>
                                     </div>
@@ -116,12 +143,12 @@ const Projects = () => {
                                                 <h4 className="font-semibold text-gray-800">Team Members</h4>
                                             </div>
                                             <ul className="space-y-2">
-                                                {project.groupInfo?.members?.map((member, idx) => (
+                                                {project.groupInfo?.selectedMembers?.map((member, idx) => (
                                                     <li key={idx} className="text-sm text-gray-600 flex items-start">
                                                         <span className="text-blue-500 mr-2">•</span>
                                                         <div>
                                                             <p className="font-medium text-gray-800">{member.name}</p>
-                                                            <p className="text-xs text-gray-500">{member.department}</p>
+
                                                         </div>
                                                     </li>
                                                 ))}
@@ -131,17 +158,18 @@ const Projects = () => {
                                         {/* File Info */}
                                         <div className="pt-4 border-t border-gray-200">
                                             <p className="text-sm text-gray-600 mb-3">
-                                                <span className="font-medium">Report:</span> {project.submittedFile.fileName}
+                                                <span className="font-medium">Report:</span> {project.submittedFileName}
                                             </p>
                                             <p className="text-xs text-gray-500 mb-4">
                                                 Size: {Math.round(project.submittedFile.fileSize / 1024)} KB •
-                                                Submitted: {new Date(project.submittedFile.submittedAt).toLocaleDateString()}
+                                                Submitted: {new Date(project.submissionDate).toLocaleDateString()}
                                             </p>
 
                                             {/* Download Button */}
                                             <a
-                                                href={`data:${project.submittedFile.fileType};base64,${project.submittedFile.fileContent}`}
-                                                download={project.submittedFile.fileName}
+                                                href={`http://localhost:5000/${project.submittedFileName}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
                                                 className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-lg transition-all duration-300 shadow-md hover:shadow-lg"
                                             >
                                                 <FaDownload />

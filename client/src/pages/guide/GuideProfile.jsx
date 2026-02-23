@@ -325,7 +325,7 @@ import { FaUser, FaEnvelope, FaIdCard, FaBuilding, FaPhone, FaMapMarkerAlt, FaCa
 import { useAdmin } from '../../contexts/AdminContext'
 
 const GuideProfile = () => {
-  const { updateProfile, getProfile } = useAdmin()
+  const { updateProfile, profiles } = useAdmin()
   const [currentUser, setCurrentUser] = useState(null)
   const [profileData, setProfileData] = useState({
     dob: '',
@@ -339,36 +339,48 @@ const GuideProfile = () => {
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState({ type: '', text: '' })
 
+  console.log(profiles, "profile");
+
+
   // Load current user and profile data
   useEffect(() => {
-    const userData = localStorage.getItem('user')
-    if (!userData) return
+    // const userData = localStorage.getItem('user')
+    // if (!userData) return
 
     try {
-      const user = JSON.parse(userData)
-      if (user.role !== 'guide') return
+      // const user = JSON.parse(userData)
+      // if (user.role !== 'guide') return
 
-      setCurrentUser(user)
+      setCurrentUser(profiles)
+
+      setImagePreview(
+    profiles.profileImage
+      ? `http://localhost:5000/uploads/${profiles.profileImage}`
+      : ""
+  );
+    
+      
 
       // Load existing profile data
-      const existingProfile = getProfile(user.id)
-      if (existingProfile) {
-        setProfileData({
-          dob: existingProfile.dob || '',
-          phone: existingProfile.phone || '',
-          place: existingProfile.place || '',
-          address: existingProfile.address || '',
-          teacherId: existingProfile.teacherId || '',
-          profileImage: existingProfile.profileImage || ''
-        })
-        if (existingProfile.profileImage) {
-          setImagePreview(existingProfile.profileImage)
-        }
-      }
+      // const existingProfile = getProfile(user.id)
+      // if (existingProfile) {
+      //   setProfileData({
+      //     dob: existingProfile.dob || '',
+      //     phone: existingProfile.phone || '',
+      //     place: existingProfile.place || '',
+      //     address: existingProfile.address || '',
+      //     teacherId: existingProfile.teacherId || '',
+      //     profileImage: existingProfile.profileImage || ''
+      //   })
+      //   if (existingProfile.profileImage) {
+      //     setImagePreview(existingProfile.profileImage)
+      //   }
+      // }
     } catch (err) {
       console.error('User parse error:', err)
     }
-  }, [getProfile])
+  }, [profiles])
+     console.log(imagePreview,"image");
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -379,33 +391,37 @@ const GuideProfile = () => {
   }
 
   const handleImageUpload = (e) => {
-    const file = e.target.files[0]
-    if (!file) return
+    const file = e.target.files[0];
+    if (!file) return;
 
-    // Validate file type
-    if (!file.type.startsWith('image/')) {
-      setMessage({ type: 'error', text: 'Please upload a valid image file (JPG, PNG, etc.)' })
-      return
+    // ✅ Validate file type
+    if (!file.type.startsWith("image/")) {
+      setMessage({
+        type: "error",
+        text: "Please upload a valid image file (JPG, PNG, etc.)",
+      });
+      return;
     }
 
-    // Validate file size (max 2MB)
+    // ✅ Validate file size (2MB)
     if (file.size > 2 * 1024 * 1024) {
-      setMessage({ type: 'error', text: 'Image size should be less than 2MB' })
-      return
+      setMessage({
+        type: "error",
+        text: "Image size should be less than 2MB",
+      });
+      return;
     }
 
-    // Convert to base64
-    const reader = new FileReader()
-    reader.onloadend = () => {
-      const base64String = reader.result
-      setProfileData(prev => ({
-        ...prev,
-        profileImage: base64String
-      }))
-      setImagePreview(base64String)
-    }
-    reader.readAsDataURL(file)
-  }
+    // ✅ Store FILE OBJECT directly (IMPORTANT)
+    setProfileData((prev) => ({
+      ...prev,
+      profileImage: file,
+    }));
+
+    // ✅ Create preview URL (no base64 needed)
+    const previewUrl = URL.createObjectURL(file);
+    setImagePreview(previewUrl);
+  };
 
   const handleSaveProfile = () => {
     // Validate phone number
@@ -611,11 +627,10 @@ const GuideProfile = () => {
 
         {/* Message */}
         {message.text && (
-          <div className={`mb-6 p-4 rounded-lg border ${
-            message.type === 'success'
-              ? 'bg-green-100 border-green-300 text-green-700'
-              : 'bg-red-100 border-red-300 text-red-700'
-          }`}>
+          <div className={`mb-6 p-4 rounded-lg border ${message.type === 'success'
+            ? 'bg-green-100 border-green-300 text-green-700'
+            : 'bg-red-100 border-red-300 text-red-700'
+            }`}>
             {message.text}
           </div>
         )}

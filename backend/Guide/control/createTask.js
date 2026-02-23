@@ -12,6 +12,8 @@ export const addTask = async (req, res) => {
       status,
     } = req.body;
 
+
+
     // ✅ Basic validation
     if (!taskName || !groupId || !submissionDate) {
       return res.status(400).json({
@@ -272,14 +274,14 @@ export const deleteTask = async (req, res) => {
 export const publishFinalMarks = async (req, res) => {
   try {
     const taskId = req.params.id;
-    const finalMark = Number(req.body.finalMark); 
+    const finalMark = Number(req.body.finalMark);
     // console.log(req.body, "body mark", taskId, "id");
 
 
     // ✅ Correct role extraction
     const role = req.user?.id?.role;
     // console.log(role,"role");
-    
+
 
     // ✅ Role check
     if (role !== "Guide") {

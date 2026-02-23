@@ -50,6 +50,10 @@ const guideSchema = new mongoose.Schema(
       default: "Guide",
       required: true,
     },
+    profileImage: {
+      type: String,
+      default: null,
+    },
 
     notificationId: {
       type: [mongoose.Schema.Types.ObjectId],

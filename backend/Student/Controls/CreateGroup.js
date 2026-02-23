@@ -1,6 +1,7 @@
 import Group from "../Models/GroupSchema.js";
 import mongoose from "mongoose";
 import Student from "../../Admin/model/StudentSchema.js";
+import Guide from "../../Admin/model/GuidSchema.js"
 
 export const createGroup = async (req, res) => {
 
@@ -23,6 +24,9 @@ export const createGroup = async (req, res) => {
     // console.log(incomingMembers, "mem");
 
     // console.log(req.body, "body");
+
+    console.log(incomingMembers,"memn");
+    
 
     // 1️⃣ Basic validation
     if (!groupName || !topicName || !incomingMembers?.length) {
@@ -57,7 +61,8 @@ export const createGroup = async (req, res) => {
     const selectedMembers = incomingMembers
       .map(m => ({
         _id: m._id || m.id,
-        name: m.name
+        name: m.name,
+        email:m.email
       }))
       .filter(m => m._id); // remove invalid
 
@@ -115,54 +120,45 @@ export const createGroup = async (req, res) => {
 
 export const GetGroups = async (req, res) => {
   try {
-    // ✅ correct destructuring
     const { role, department, id } = req.user.id;
-    // console.log("hell", role, "role");
-    
 
-    //   console.log(id,"id");
-      
-    let data;
+    let data = [];
 
-    // 👨‍🎓 STUDENT → find groups where student exists in selectedMembers
+    // 👨‍🎓 STUDENT → groups where student is member
     if (role === "Student") {
       data = await Group.find({
         "selectedMembers._id": id
       });
     }
 
-    // 👨‍🏫 TEACHER / ADMIN → fetch by department
-    else if (role === "Guide" ||role ==="admin") {
+    // 👨‍🏫 GUIDE → department + assigned + not rejected
+    else if (role === "Guide") {
       data = await Group.find({
         department: department,
-
-        // ✅ not accepted yet
         teacherId: id,
-
-        // ✅ not rejected by this guide
         rejectedTeachers: { $ne: id }
       });
     }
 
-
-    
-    // console.log(data, "dtaa");
-
+    // 🧑‍💼 ADMIN → fetch EVERYTHING (no filters)
+    else if (role === "Admin" || role === "admin") {
+      data = await Group.find();
+    }
 
     return res.status(200).json({
       success: true,
+      count: data.length,
       data
     });
 
   } catch (error) {
-    console.error(error);
+    console.error("GetGroups Error:", error);
     res.status(500).json({
       success: false,
       message: "Server Error"
     });
   }
 };
-
 
 export const EditGroup = async (req, res) => {
   try {
@@ -238,6 +234,8 @@ export const assignGroup = async (req, res) => {
 
     const groupId = notificationId
 
+    const guide = await Guide.findById(guideId);
+
     // ✅ Validation
     if (!groupId || !guideId) {
       return res.status(400).json({
@@ -250,7 +248,8 @@ export const assignGroup = async (req, res) => {
     const updatedGroup = await Group.findByIdAndUpdate(
       groupId,
       {
-        teacherId: guideId,   // 👈 store guide id
+        teacherId: guideId,
+        teacherName: guide.name,  // 👈 store guide id
         status: "Accepted"    // 👈 change status
       },
       { new: true }
@@ -323,6 +322,50 @@ export const rejectGroup = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: "Server error"
+    });
+  }
+};
+
+export const getGuideAccetedGrp = async (req, res) => {
+  try {
+    const guideId = req.user.id?.id;
+    // console.log(guideId,"guide id11");
+
+
+    if (!guideId) {
+      return res.status(400).json({
+        success: false,
+        message: "Guide ID not found"
+      });
+    }
+
+    // ✅ Correct field name: teacherId
+    const groups = await Group.find({
+      teacherId: guideId,
+      status: "Accepted"
+    })
+      .populate("teacherId")
+      .populate("selectedMembers", "name email")
+      .lean();
+
+    if (!groups.length) {
+      return res.status(404).json({
+        success: false,
+        message: "No accepted groups found"
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      count: groups.length,
+      data: groups
+    });
+
+  } catch (error) {
+    console.error("Fetch Guide Groups Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server Error"
     });
   }
 };
