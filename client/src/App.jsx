@@ -28,6 +28,8 @@ import GuideDashboard from './pages/guide/GuideDashboard'
 import GuideProfile from './pages/guide/GuideProfile'
 import StudentProfile from './pages/student/StudentProfile'
 import ChatBot from './pages/student/ChatBot'
+import StudentAnalytics from './pages/student/StudentAnalytics'
+import GuideAnalytics from './pages/guide/GuideAnalytics'
 
 const App = () => {
   // useEffect(() => {
@@ -61,6 +63,7 @@ const App = () => {
             <Route path="managegroup" element={<ManageGroups />} />
             <Route path="message-guide" element={<MessageGuide />} />
             <Route path="guide-profile" element={<GuideProfile />} />
+            <Route path="guide-analytics" element={<GuideAnalytics/>} />
           </Route>
 
           <Route path="/student" element={<StudentLayout />}>
@@ -71,6 +74,7 @@ const App = () => {
             <Route path="student-notification" element={<StudentNotification />} />
             <Route path="student-profile" element={<StudentProfile />} />
             <Route path="student-chatbot" element={<ChatBot />} />
+            <Route path="student-analytics" element={<StudentAnalytics />} />
           </Route>
         </Routes>
       </AdminProvider>

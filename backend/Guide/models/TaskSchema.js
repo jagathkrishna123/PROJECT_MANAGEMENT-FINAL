@@ -51,12 +51,20 @@ const taskSchema = new mongoose.Schema(
             trim: true,
             default: "",
         },
-        
+
         submittedFileName: {
             type: String,
             default: "",
         },
-          submittedFile: {
+        submittedFile: {
+            type: String,
+            default: "",
+        },
+        submittedFilePath: {
+            type: String,
+            default: "",
+        },
+        submittedFileType: {
             type: String,
             default: "",
         },

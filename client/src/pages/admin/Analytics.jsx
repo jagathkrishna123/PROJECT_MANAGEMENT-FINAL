@@ -25,9 +25,9 @@ const Analytics = () => {
   // 1. Tasks per Project (Project Progress)
   const projectData = useMemo(() => {
     return projectGroups.map((group) => {
-      const groupTasks = tasks.filter((task) => task.groupId === group.id);
+      const groupTasks = tasks.filter((task) => task.groupId === group._id);
       return {
-        name: group.name,
+        name: group.groupName || group.name,
         tasks: groupTasks.length,
         completed: groupTasks.filter(t => t.status === 'Completed' || t.status === 'Verified').length
       };
@@ -53,7 +53,7 @@ const Analytics = () => {
     return departments.map(d => {
       const deptStudents = students.filter(s => s.department === d.name);
       const deptGuides = guides.filter(g => g.department === d.name);
-      const deptGroups = projectGroups.filter(p => p.members[0]?.department === d.name);
+      const deptGroups = projectGroups.filter(p => p.department === d.name);
 
       return {
         name: d.name,

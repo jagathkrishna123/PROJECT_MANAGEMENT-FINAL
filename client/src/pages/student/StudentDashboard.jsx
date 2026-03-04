@@ -20,80 +20,32 @@ const StudentDashboard = () => {
 
 
   useEffect(() => {
-    // // Get current student from localStorage (you might want to get this from auth context)
-    // const userData = localStorage.getItem('user')
+    if (!studentId || students.length === 0) return; // ✅ ADD THIS LINE  
+    const student = students.find(s => s._id === studentId)
+    if (student) {
+      setCurrentStudent(student)
 
+      // Get student's projects
+      const projects = projectGroups.filter(group =>
+        group.selectedMembers && group.selectedMembers.some(member => member._id === studentId)
+      )
+      setStudentProjects(projects)
 
-    students.map((student) => {
-      if (student._id === studentId) {
-        setCurrentStudent(student);
-      }
-    });
+      // Get student's tasks from all projects they belong to
+      const studentTasksData = tasks.filter(task => {
+        // Check if task belongs to any of student's projects
+        return projects.some(project => project._id === task.groupId)
+      })
+      setStudentTasks(studentTasksData)
+    }
 
-
-    // if (userData && students) {
-    //   try {
-    //     const user = JSON.parse(userData)
-    //     const student = students.find(s => s.email === user.email || s.username === user.username)
-    //     if (student) {
-    //       setCurrentStudent(students)
-
-    //       // Get student's projects
-    //       const projects = projectGroups.filter(group =>
-    //         group.members && group.members.some(member => member.email === student.email)
-    //       )
-    //       setStudentProjects(projects)
-
-    //       // Get student's tasks from all projects they belong to
-    //       const studentTasksData = tasks.filter(task => {
-    //         // Check if task belongs to any of student's projects
-    //         return projects.some(project => project.id === task.groupId)
-    //       })
-    //       setStudentTasks(studentTasksData)
-    //     } else {
-    //       // If no student found, try to show data for first student (for demo purposes)
-    //       console.log('No matching student found, showing first student data for demo')
-    //       if (students.length > 0) {
-    //         const demoStudent = students[0]
-    //         setCurrentStudent(demoStudent)
-
-    //         const projects = projectGroups.filter(group =>
-    //           group.members && group.members.some(member => member.email === demoStudent.email)
-    //         )
-    //         setStudentProjects(projects)
-
-    //         const studentTasksData = tasks.filter(task =>
-    //           projects.some(project => project.id === task.groupId)
-    //         )
-    //         setStudentTasks(studentTasksData)
-    //       }
-    //     }
-    //   } catch (error) {
-    //     console.error('Error parsing user data:', error)
-    //     // For demo purposes, show first student if there's an error
-    //     if (students.length > 0) {
-    //       const demoStudent = students[0]
-    //       setCurrentStudent(demoStudent)
-
-    //       const projects = projectGroups.filter(group =>
-    //         group.members && group.members.some(member => member.email === demoStudent.email)
-    //       )
-    //       setStudentProjects(projects)
-
-    //       const studentTasksData = tasks.filter(task =>
-    //         projects.some(project => project.id === task.groupId)
-    //       )
-    //       setStudentTasks(studentTasksData)
-    //     }
-    //   }
-    // }
-
-    // // Get recent notifications (last 3) - these are general notifications for all students
-    // const recent = Notifications
-    //   .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-    //   .slice(0, 3)
-    // setRecentNotifications(recent)
-  }, [students, projectGroups, tasks, Notifications])
+    // Get recent notifications (last 3)
+    const recent = [...(Notifications || [])]
+      .sort((a, b) => new Date(b.createdAt || b.timestamp || 0) - new Date(a.createdAt || a.timestamp || 0))
+      .reverse() // Sort descending
+      .slice(0, 3)
+    setRecentNotifications(recent)
+  }, [students, projectGroups, tasks, Notifications, studentId])
 
   const formatDate = (dateString) => {
     const date = new Date(dateString)
@@ -188,10 +140,10 @@ const StudentDashboard = () => {
             <div>
               <p className="text-slate-600 text-sm font-medium">Active Tasks</p>
               <p className="text-3xl font-bold text-slate-900">
-                {studentTasks.filter(task => task.status !== 'Completed').length}
+                {studentTasks.filter(task => task.status !== 'Completed' && task.status !== 'Verified').length}
               </p>
               <p className="text-xs text-slate-500 mt-1">
-                {studentTasks.filter(task => task.status === 'Completed').length} completed
+                {studentTasks.filter(task => task.status === 'Completed' || task.status === 'Verified').length} completed
               </p>
             </div>
             <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
@@ -218,11 +170,11 @@ const StudentDashboard = () => {
             <div>
               <p className="text-slate-600 text-sm font-medium">Completed Tasks</p>
               <p className="text-3xl font-bold text-slate-900">
-                {studentTasks.filter(task => task.status === 'Completed').length}
+                {studentTasks.filter(task => task.status === 'Completed' || task.status === 'Verified').length}
               </p>
               <p className="text-xs text-slate-500 mt-1">
                 {studentTasks.length > 0
-                  ? `${Math.round((studentTasks.filter(task => task.status === 'Completed').length / studentTasks.length) * 100)}% done`
+                  ? `${Math.round((studentTasks.filter(task => task.status === 'Completed' || task.status === 'Verified').length / studentTasks.length) * 100)}% done`
                   : 'No tasks yet'
                 }
               </p>
@@ -260,7 +212,7 @@ const StudentDashboard = () => {
             ) : (
               recentNotifications.map((notification) => (
                 <div
-                  key={notification.id}
+                  key={notification._id}
                   className={`p-4 rounded-lg border transition-all duration-200 hover:shadow-sm ${notification.read ? 'bg-slate-50 border-slate-200' : 'bg-blue-50 border-blue-200'
                     }`}
                 >
@@ -279,7 +231,7 @@ const StudentDashboard = () => {
                       )}
                       <div className="flex items-center justify-between mt-2">
                         <p className="text-xs text-slate-500">
-                          {new Date(notification.timestamp).toLocaleDateString()} • {notification.sender}
+                          {new Date(notification.createdAt || notification.timestamp).toLocaleDateString()} • {notification.sender || 'System'}
                         </p>
                         <span className={`text-xs px-2 py-1 rounded-full ${notification.type === 'important' ? 'bg-red-100 text-red-700' :
                           notification.type === 'guide' ? 'bg-blue-100 text-blue-700' :
@@ -322,7 +274,7 @@ const StudentDashboard = () => {
                 <p className="mb-2">No tasks assigned yet</p>
                 <p className="text-sm">Tasks will appear here once your guide assigns them to your project.</p>
               </div>
-            ) : studentTasks.filter(task => task.status !== 'Completed').length === 0 ? (
+            ) : studentTasks.filter(task => task.status !== 'Completed' && task.status !== 'Verified').length === 0 ? (
               <div className="text-center py-8 text-slate-500">
                 <FiCheckCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
                 <p className="mb-2">All tasks completed!</p>
@@ -330,7 +282,7 @@ const StudentDashboard = () => {
               </div>
             ) : (
               studentTasks
-                .filter(task => task.status !== 'Completed')
+                .filter(task => task.status !== 'Completed' && task.status !== 'Verified')
                 .sort((a, b) => {
                   // Sort by priority: overdue first, then by deadline
                   const aOverdue = a.deadline && new Date(a.deadline) < new Date()
@@ -341,11 +293,11 @@ const StudentDashboard = () => {
                 })
                 .slice(0, 4)
                 .map((task) => {
-                  const project = studentProjects.find(p => p.id === task.groupId)
+                  const project = studentProjects.find(p => p._id === task.groupId)
                   const isOverdue = task.deadline && new Date(task.deadline) < new Date()
 
                   return (
-                    <div key={task.id} className={`p-4 rounded-lg border bg-slate-50 ${isOverdue ? 'border-red-200 bg-red-50' : 'border-slate-200'}`}>
+                    <div key={task._id} className={`p-4 rounded-lg border bg-slate-50 ${isOverdue ? 'border-red-200 bg-red-50' : 'border-slate-200'}`}>
                       <div className="flex items-center justify-between mb-2">
                         <h3 className={`font-medium ${isOverdue ? 'text-red-900' : 'text-slate-900'}`}>
                           {task.title}
@@ -357,7 +309,7 @@ const StudentDashboard = () => {
                       </div>
                       {project && (
                         <p className="text-sm text-slate-600 mb-2">
-                          Project: {project.name}
+                          Project: {project.groupName || project.name}
                         </p>
                       )}
                       {task.description && (
@@ -400,9 +352,9 @@ const StudentDashboard = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {studentProjects.map((project) => (
-              <div key={project.id} className="border border-slate-200 rounded-xl p-6 hover:shadow-md transition-shadow">
+              <div key={project._id} className="border border-slate-200 rounded-xl p-6 hover:shadow-md transition-shadow">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="font-semibold text-slate-900">{project.name}</h3>
+                  <h3 className="font-semibold text-slate-900">{project.groupName || project.name}</h3>
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${project.status === 'Accepted' ? 'bg-green-100 text-green-700' :
                     project.status === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
                       'bg-gray-100 text-gray-700'
@@ -414,7 +366,7 @@ const StudentDashboard = () => {
                 <div className="space-y-2 mb-4">
                   <div className="flex items-center text-sm text-slate-600">
                     <FiUsers className="w-4 h-4 mr-2" />
-                    {project.members.length} members
+                    {project.selectedMembers.length} members
                   </div>
                   <div className="text-sm text-slate-600">
                     Created: {formatDate(project.createdAt)}
@@ -423,7 +375,7 @@ const StudentDashboard = () => {
 
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-slate-500">
-                    {studentTasks.filter(task => task.groupId === project.id).length} tasks
+                    {studentTasks.filter(task => task.groupId === project._id).length} tasks
                   </span>
                   <Link
                     to="/student/group"

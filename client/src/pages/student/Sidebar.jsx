@@ -2,7 +2,7 @@ import React from "react";
 import { NavLink } from "react-router-dom";
 import { BiNotification } from "react-icons/bi";
 import { CgAdd, CgNotes } from "react-icons/cg";
-import { GoReport } from "react-icons/go";
+import { GoGraph, GoReport } from "react-icons/go";
 import { LuMessageSquareMore, LuUserRoundCheck } from "react-icons/lu";
 
 import {
@@ -107,6 +107,12 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             to="/student/student-chatbot"
             icon={RiRobot2Line}
             label="Chatbot"
+            onClick={() => setIsOpen(false)}
+          />
+          <SidebarLink
+            to="/student/student-analytics"
+            icon={GoGraph}
+            label="Analytics"
             onClick={() => setIsOpen(false)}
           />
         </nav>

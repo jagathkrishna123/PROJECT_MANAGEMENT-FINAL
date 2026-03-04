@@ -71,7 +71,7 @@ const ChatBot = () => {
       <div className="fixed top-[-10%] left-[-5%] w-[40%] h-[40%] bg-blue-100/50 blur-[120px] rounded-full -z-10 animate-pulse"></div>
       <div className="fixed bottom-[-10%] right-[-5%] w-[40%] h-[40%] bg-purple-100/50 blur-[120px] rounded-full -z-10 animate-pulse" style={{ animationDelay: '2s' }}></div>
 
-      <div className="w-full max-w-5xl h-[85vh] flex flex-col bg-white rounded-[2.5rem] border border-slate-200/60 shadow-[0_20px_50px_rgba(0,0,0,0.05)] overflow-hidden relative">
+      <div className="w-full max-w-6xl h-screen flex flex-col  rounded-[2.5rem] border border-slate-200/60 shadow-[0_20px_50px_rgba(0,0,0,0.05)] overflow-hidden relative">
         {/* Header */}
         <div className="flex items-center justify-between p-6 bg-white/80 backdrop-blur-md border-b border-slate-100 z-10">
           <div className="flex items-center gap-4">

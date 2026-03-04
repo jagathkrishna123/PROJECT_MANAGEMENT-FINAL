@@ -9,9 +9,14 @@ import React, { useState, useEffect } from 'react'
 // import { assets } from '../../assets/assets'
 import { Outlet, useNavigate } from 'react-router-dom'
 import Sidebar from './Sidebar'
+import CAPSLOG from "../../assets/capstonelogo2.png"
+import { useAdmin } from '../../contexts/AdminContext'
+import { useNotifications } from '../../contexts/NotificationContext'
 
 const StudentLayout = () => {
     const navigate = useNavigate()
+    const { clearAllData } = useAdmin()
+    const { clearNotifications } = useNotifications()
     const [user, setUser] = useState(null)
     const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
@@ -38,6 +43,8 @@ const StudentLayout = () => {
     }, [navigate])
 
     const logout = () => {
+        clearAllData()
+        clearNotifications()
         localStorage.removeItem('user')
         localStorage.removeItem('controller')
         navigate('/')
@@ -68,12 +75,14 @@ const StudentLayout = () => {
                         </button>
 
                         <div className="flex items-center space-x-3">
-                            <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg">
-                                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
+                            <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg bg-white overflow-hidden">
+                                <img
+                                    src={CAPSLOG}
+                                    alt="Capstone Logo"
+                                    className="w-full h-full object-contain"
+                                />
                             </div>
-                            <h1 className="text-xl lg:text-3xl font-bold bg-gradient-to-r from-blue-600 via-cyan-500 to-indigo-600 bg-clip-text text-transparent truncate max-w-[150px] sm:max-w-none">
+                            <h1 className="font-lobster text-xl lg:text-3xl font-bold bg-gradient-to-r from-blue-600 via-cyan-500 to-indigo-600 bg-clip-text text-transparent truncate max-w-[150px] sm:max-w-none">
                                 Capstone
                             </h1>
                         </div>

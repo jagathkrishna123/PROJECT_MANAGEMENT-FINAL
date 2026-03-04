@@ -1,0 +1,2295 @@
+import React, { useState, useEffect } from 'react'
+import { FaTasks, FaUpload, FaCheckCircle, FaClock, FaFile, FaFlagCheckered } from 'react-icons/fa'
+import { useAdmin } from '../../contexts/AdminContext'
+
+const Tasks = () => {
+  const { projectGroups, tasks, submitTaskFile, studentId } = useAdmin()
+  const [currentUser, setCurrentUser] = useState(null)
+  const [userGroup, setUserGroup] = useState([])
+  const [groupTasks, setGroupTasks] = useState([])
+  const [uploadingTaskId, setUploadingTaskId] = useState(null)
+  const [selectedFiles, setSelectedFiles] = useState({})
+  console.log(selectedFiles, "sleddd");
+
+// useEffect(()=>{
+
+// })
+//   useEffect(() => {
+    // const userData = localStorage.getItem('user')
+    // if (userData) {
+    //   try {
+    //     const parsedUser = JSON.parse(userData)
+    //     setCurrentUser(parsedUser)
+
+    //     // Find the group the user belongs to
+    //     const foundGroup = projectGroups.find(group =>
+    //       group.members.some(member => member.id === parsedUser.id)
+    //     )
+    //     setUserGroup(foundGroup)
+
+    //     if (foundGroup) {
+    //       const tasksForGroup = tasks.filter(task => task.groupId === foundGroup.id)
+
+    //     }
+    //   } catch (error) {
+    //     console.error('Error parsing user data:', error)
+    //   }
+    // }
+    useEffect(() => {
+      if (studentId && projectGroups.length > 0) {
+        // Find the group the user belongs to
+        const foundGroup = projectGroups.find(group =>
+          group.selectedMembers && group.selectedMembers.some(member => member._id === studentId)
+        )
+        setUserGroup(foundGroup || null)
+      } else {
+        setUserGroup(null)
+      }
+
+      setGroupTasks(tasks)
+    }, [projectGroups, tasks, studentId])
+
+    console.log(groupTasks, "gro[Tas");
+    console.log(userGroup, "pro");
+
+
+    const handleFileSelect = (taskId, event) => {
+      const file = event.target.files[0];
+      console.log(file, "selected file");
+
+      if (file) {
+        // Check file size (max 10MB)
+        if (file.size > 10 * 1024 * 1024) {
+          alert('File size must be less than 10MB');
+          return;
+        }
+
+        // Store the File object directly (no Base64)
+        setSelectedFiles(prev => ({
+          ...prev,
+          [taskId]: {
+            file,
+            fileName: file.name,
+            fileSize: file.size,
+            fileType: file.type,
+          }
+        }));
+      }
+    };
+
+    const handleSubmitFile = async (taskId) => {
+      console.log("kkk");
+
+      const fileData = selectedFiles[taskId]
+      if (!fileData) {
+        alert('Please select a file first')
+        return
+      }
+
+      // if (!currentUser) {
+      //   alert('User not found')
+      //   return
+      // }
+
+      setUploadingTaskId(taskId)
+      try {
+        submitTaskFile(taskId, fileData.file); // <-- pass the actual File object
+
+        alert('File submitted successfully!')
+        // Clear selected file
+        setSelectedFiles(prev => {
+          const newState = { ...prev }
+          delete newState[taskId]
+          return newState
+        })
+
+        // Refresh tasks
+        if (userGroup) {
+          const tasksForGroup = tasks.filter(task => task.groupId === userGroup._id)
+          setGroupTasks(tasksForGroup)
+        }
+      } catch (error) {
+        console.error('Error submitting file:', error)
+        alert('Error submitting file. Please try again.')
+      } finally {
+        setUploadingTaskId(null)
+      }
+    }
+
+    const formatFileSize = (bytes) => {
+      if (bytes === 0) return '0 Bytes'
+      const k = 1024
+      const sizes = ['Bytes', 'KB', 'MB', 'GB']
+      const i = Math.floor(Math.log(bytes) / Math.log(k))
+      return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i]
+    }
+
+    const getTaskStatus = (task) => {
+      const dueDate = new Date(task.submissionDate)
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      dueDate.setHours(0, 0, 0, 0)
+
+      switch (task.status) {
+        case 'Verified':
+          return { text: 'Verified', color: 'text-green-700', bg: 'bg-green-50', icon: FaCheckCircle }
+        case 'Submitted':
+          return { text: 'Submitted', color: 'text-green-600', bg: 'bg-green-50', icon: FaCheckCircle }
+        case 'Needs Resubmit':
+          return { text: 'Resubmit', color: 'text-orange-600', bg: 'bg-orange-50', icon: FaClock }
+        default: {
+          if (dueDate < today) {
+            return { text: 'Overdue', color: 'text-red-600', bg: 'bg-red-50', icon: FaClock }
+          }
+          return { text: 'Pending', color: 'text-amber-600', bg: 'bg-amber-50', icon: FaClock }
+        }
+      }
+    }
+
+    if (!groupTasks) {
+      return (
+        <div className="flex items-center justify-center min-h-[40vh] text-slate-500">
+          Loading...
+        </div>
+      )
+    }
+
+    if (!userGroup) {
+      return (
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
+            <FaTasks className="text-slate-300 text-6xl mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-slate-700 mb-2">No Group Assigned</h3>
+            <p className="text-slate-500">You need to be part of a group to view tasks.</p>
+          </div>
+        </div>
+      )
+    }
+
+    return (
+      <div className="max-w-5xl mx-auto">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-slate-800 mb-2 flex items-center gap-3">
+            <FaTasks className="text-blue-600" />
+            Project Tasks
+          </h1>
+          <p className="text-slate-600">View and submit tasks assigned to your group</p>
+          <p className="text-sm text-slate-500 mt-1">Group: <span className="font-medium">{userGroup?.groupName}</span></p>
+        </div>
+
+        {groupTasks.length === 0 ? (
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-12 text-center">
+            <FaTasks className="text-slate-300 text-6xl mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-slate-700 mb-2">No Tasks Assigned</h3>
+            <p className="text-slate-500">Your guide hasn't assigned any tasks yet.</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {groupTasks.map((task) => {
+              const isFinalStage = task.taskName === 'Final Report Submission'
+              const status = getTaskStatus(task)
+              const StatusIcon = status.icon
+              const hasFile = !!selectedFiles[task._id]
+              const isSubmitted = task.status === 'Submitted' || task.status === 'Verified'
+              const dueDate = new Date(task.submissionDate)
+              const isOverdue = dueDate < new Date() && !isSubmitted
+
+              return (
+                <div
+                  key={task._id}
+                  className={`rounded-xl shadow-sm border p-6 transition-all duration-300 relative ${isFinalStage
+                    ? 'bg-red-400 border-blue-200 shadow-blue-50 border-l-8 border-l-blue-600'
+                    : 'bg-white border-slate-200 hover:shadow-md'
+                    }`}
+                >
+                  <div className="flex items-start justify-between mb-4 relative z-10">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2 flex-wrap">
+                        {isFinalStage && (
+                          <span className="flex items-center gap-1 bg-blue-600 text-white px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">
+                            <FaFlagCheckered className="text-[10px]" />
+                            Final Stage
+                          </span>
+                        )}
+                        <h3 className={`text-lg font-bold ${isFinalStage ? 'text-blue-900' : 'text-slate-800'}`}>
+                          {task.taskName}
+                        </h3>
+                        <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${status.bg} ${status.color} border border-current/10`}>
+                          <StatusIcon className="text-xs" />
+                          {status.text}
+                        </span>
+                      </div>
+
+                      {isFinalStage && task.finalMark !== undefined && (
+                        <div className="my-6 p-6 bg-red-100 border border-slate-200 rounded-xl shadow-inner">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">Project Performance Score</p>
+                              <div className="flex items-baseline gap-1">
+                                <span className="text-5xl font-black text-slate-900">{task.finalMark}</span>
+                                <span className="text-xl font-bold text-slate-400">/ 100</span>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold border border-green-200 inline-flex items-center gap-1">
+                                <FaCheckCircle className="text-[10px]" />
+                                COMPLETED
+                              </div>
+                              <p className="text-[10px] text-slate-400 mt-2 font-medium">Published on {new Date(task.publishedAt || Date.now()).toLocaleDateString()}</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-4 text-sm text-slate-600">
+                        <span className="flex items-center gap-1">
+                          <FaClock className="text-slate-400" />
+                          Deadline: {dueDate.toLocaleDateString('en-GB')}
+                        </span>
+                        {isOverdue && (
+                          <span className="text-red-600 font-bold">⚠ Overdue</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {isSubmitted && task.submittedFile && (
+                    <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="flex items-center gap-2 text-green-700 mb-2">
+                        <FaCheckCircle />
+                        <span className="font-medium">
+                          {task.status === 'Verified' ? 'Verified Submission' : 'File Submitted'}
+                        </span>
+                      </div>
+                      <div className="text-sm text-green-600 space-y-1">
+                        <p>File: {task.submittedFile.fileName}</p>
+                        <p>Size: {formatFileSize(task.submittedFile.fileSize)}</p>
+                        <p>Submitted: {new Date(task.submittedFile.submittedAt).toLocaleString()}</p>
+                        {task.reviewRemark && (
+                          <p className="text-xs text-green-800">
+                            Guide remark: {task.reviewRemark}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {!isSubmitted && (
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">
+                          Upload File (Max 10MB)
+                        </label>
+                        <div className="flex items-center gap-3">
+                          <label className="flex-1 cursor-pointer">
+                            <input
+                              type="file"
+                              onChange={(e) => handleFileSelect(task._id, e)}
+                              className="hidden"
+                              accept=".pdf,.doc,.docx,.zip,.rar"
+                            />
+                            <div className="flex items-center gap-2 px-4 py-2 border-2 border-dashed border-slate-300 rounded-lg hover:border-blue-500 transition-colors">
+                              <FaFile className="text-slate-400" />
+                              <span className="text-sm text-slate-600">
+                                {hasFile ? selectedFiles[task._id].fileName : 'Choose file...'}
+                              </span>
+                            </div>
+                          </label>
+                          {hasFile && (
+                            <button
+                              onClick={() => handleSubmitFile(task._id)}
+                              disabled={uploadingTaskId === task._id}
+                              className="inline-flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg font-medium transition-colors"
+                            >
+                              <FaUpload />
+                              {uploadingTaskId === task._id ? 'Uploading...' : 'Submit'}
+                            </button>
+                          )}
+                        </div>
+                        {hasFile && (
+                          <p className="text-xs text-slate-500 mt-1">
+                            File size: {formatFileSize(selectedFiles[task._id].fileSize)}
+                          </p>
+                        )}
+                      </div>
+                      {task.reviewRemark && task.status === 'Needs Resubmit' && (
+                        <div className="p-3 bg-orange-50 border border-orange-200 rounded-lg text-xs text-orange-800">
+                          Guide remark: {task.reviewRemark}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    )
+      }
+
+export default Tasks
+//////////////////////////////////////////////////////
+
+import React, { useState, useEffect } from 'react'
+import { FaCalendarAlt, FaTasks, FaSave, FaPlus, FaTrash, FaFlagCheckered, FaCheckCircle } from 'react-icons/fa'
+import { useAdmin } from '../../contexts/AdminContext'
+import axios from 'axios'
+const AddTask = () => {
+  const { projectGroups, tasks, addTask, editTask, updateTask, getTasksByGroup, reviewTask } = useAdmin()
+
+  const [currentUser, setCurrentUser] = useState(null)
+  const [supervisedGroups, setSupervisedGroups] = useState([])
+  const [selectedGroupId, setSelectedGroupId] = useState(null)
+  const [existingTasks, setExistingTasks] = useState([])
+  const [taskDates, setTaskDates] = useState({})
+  const [saving, setSaving] = useState(false)
+  const [remarks, setRemarks] = useState({})
+  // console.log(existingTasks, "existig");
+
+  // New states for dynamic task creation
+  const [newTaskName, setNewTaskName] = useState('')
+  const [newTaskDeadline, setNewTaskDeadline] = useState('')
+  // Final report states
+  const [finalReportDeadline, setFinalReportDeadline] = useState('')
+  const [finalMarks, setFinalMarks] = useState({}) // { groupId: mark }
+  const [finalReportTask, setFinalReportTask] = useState(null)
+
+  /* ===============================
+     Load guide + assigned groups
+  =============================== */
+
+
+  // const downloadFile = async (filePath, fileName) => {
+  //   try {
+  //     const response = await fetch(`http://localhost:5000/${filePath}`);
+
+  //     const blob = await response.blob();
+
+  //     const url = window.URL.createObjectURL(blob);
+
+  //     const a = document.createElement("a");
+  //     a.href = url;
+  //     a.download = fileName; // force download name
+
+  //     document.body.appendChild(a);
+  //     a.click();
+
+  //     a.remove();
+  //     window.URL.revokeObjectURL(url);
+  //   } catch (err) {
+  //     console.error("Download failed:", err);
+  //   }
+  // };
+
+  useEffect(() => {
+    // const userData = localStorage.getItem('user')
+    // if (!userData) return
+
+    try {
+      // const user = JSON.parse(userData)
+      // if (user.role !== 'guide') return
+
+      // setCurrentUser(user)
+
+      const assigned = projectGroups.filter(
+        g => g.status === 'Accepted'
+      )
+
+
+
+
+      setSupervisedGroups(assigned)
+
+      // Ensure selectedGroupId is always valid
+      if (assigned.length === 0) {
+        setSelectedGroupId(null)
+      } else if (selectedGroupId === null || !assigned.some(g => g._id === selectedGroupId)) {
+        // If nothing is selected, or selected group is no longer valid, default to the first
+        setSelectedGroupId(assigned.length > 0 ? assigned[0]._id : null)
+      }
+    } catch (err) {
+      console.error('User parse error:', err)
+    }
+  }, [projectGroups, selectedGroupId])
+  console.log(supervisedGroups, "super");
+
+  /* ===============================
+     Sync tasks when group changes
+  =============================== */
+  useEffect(() => {
+    if (!selectedGroupId) {
+      setExistingTasks([]);
+      setTaskDates({});
+      setFinalReportTask(null);
+      return;
+    }
+
+    const groupTasks = tasks.filter(t => t.groupId === selectedGroupId);
+
+    const finalTask = groupTasks.find(
+      t => t.taskName === "Final Report Submission"
+    );
+
+    const regularTasks = groupTasks.filter(
+      t => t.taskName !== "Final Report Submission"
+    );
+
+    setFinalReportTask(finalTask || null);
+    setExistingTasks(regularTasks);
+
+    const dates = {};
+    regularTasks.forEach(task => {
+      dates[task._id] = task.submissionDate
+        ? new Date(task.submissionDate).toISOString().split("T")[0]
+        : "";
+    });
+
+    setTaskDates(dates);
+
+    if (finalTask) {
+      setFinalReportDeadline(
+        new Date(finalTask.submissionDate).toISOString().split("T")[0]
+      );
+    }
+
+  }, [selectedGroupId, tasks]);
+
+  /* ===============================
+     Handlers
+  =============================== */
+  const handleDateChange = (taskId, date) => {
+    setTaskDates((prev) => ({
+      ...prev,
+      [taskId]: date,
+    }));
+  };
+
+  const handleRemarkChange = (taskId, value) => {
+    setRemarks(prev => ({
+      ...prev,
+      [taskId]: value
+    }))
+  }
+
+  const handleAssignTask = async (taskId) => {
+    if (!selectedGroupId) {
+      alert('Please select a group')
+      return
+    }
+
+    const taskToUpdate = existingTasks.find(t => t._id === taskId)
+    if (!taskToUpdate) {
+      alert('Task not found')
+      return
+    }
+
+    const submissionDate = taskDates[taskToUpdate._id] !== undefined
+      ? taskDates[taskToUpdate._id]
+      : (taskToUpdate.submissionDate ? new Date(taskToUpdate.submissionDate).toISOString().split('T')[0] : '');
+
+    if (!submissionDate) {
+      alert('Please select a submission date')
+      return
+    }
+
+    setSaving(true)
+
+    try {
+      await editTask(taskToUpdate._id, {
+        submissionDate: submissionDate,
+      })
+      alert('Task date updated successfully!')
+    } catch (error) {
+      console.error('Error updating task date:', error)
+      alert('Failed to update task date')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleReview = (task, action) => {
+    console.log(task, "oppp");
+
+    if (!task) return
+    const remark = remarks[task._id] || ''
+
+    const status = action === 'verify' ? 'Verified' : 'Needs Resubmit'
+    reviewTask(task._id, { status, remark })
+    alert(
+      action === 'verify'
+        ? 'Task verified successfully.'
+        : 'Resubmit requested from students.'
+    )
+  }
+
+  const handleCreateTask = () => {
+    if (!selectedGroupId) {
+      alert('Please select a group first')
+      return
+    }
+
+    if (!newTaskName.trim()) {
+      alert('Please enter a task name')
+      return
+    }
+
+    if (!newTaskDeadline) {
+      alert('Please select a deadline')
+      return
+    }
+
+    // Check if task with same name already exists for this group
+    const duplicate = existingTasks.find(t => t.taskName.toLowerCase() === newTaskName.trim().toLowerCase())
+    if (duplicate) {
+      alert('A task with this name already exists for this group')
+      return
+    }
+
+    setSaving(true)
+
+    addTask({
+      taskName: newTaskName.trim(),
+      groupId: selectedGroupId,
+      submissionDate: newTaskDeadline,
+      // assignedBy: currentUser.id,
+      status: 'Pending'
+    })
+
+    // Reset form
+    setNewTaskName('')
+    setNewTaskDeadline('')
+    setSaving(false)
+    alert('Task created successfully!')
+  }
+
+  const handleDeleteTask = async (taskId) => {
+    // ⭐ Confirmation popup
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this task?"
+    );
+
+    if (!confirmDelete) return;
+
+    try {
+      const res = await axios.delete(
+        `/deleteTask/${taskId}`,
+        {
+          withCredentials: true
+        }
+      );
+
+      console.log(res, "delete");
+
+      alert("Task deleted successfully ✅");
+      setExistingTasks(prev => prev.filter(task => task._id !== taskId));
+      return res.data;
+
+
+    } catch (error) {
+      console.error("Delete Task Error:", error);
+      alert("Failed to delete task ❌");
+      throw error;
+    }
+  };
+
+  const handleFinalReportDeadline = async () => {
+    if (!selectedGroupId) {
+      alert("Please select a group first");
+      return;
+    }
+
+    if (!finalReportDeadline) {
+      alert("Please select a deadline for the final report");
+      return;
+    }
+
+    setSaving(true);
+
+    try {
+      if (finalReportTask) {
+        // ✅ Update existing task
+        await editTask(finalReportTask._id, {
+          submissionDate: finalReportDeadline,
+        });
+        alert("Final report deadline updated!");
+      } else {
+        // ✅ Create new task
+        await addTask({
+          taskName: "Final Report Submission",
+          groupId: selectedGroupId,
+          submissionDate: finalReportDeadline,
+          status: "Pending",
+        });
+        alert("Final report task created!");
+      }
+    } catch (error) {
+      console.error("Error setting final report deadline:", error);
+      alert("Failed to set deadline");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleMarkChange = (groupId, mark) => {
+    setFinalMarks(prev => ({
+      ...prev,
+      [groupId]: mark
+    }))
+  }
+
+  const handlePublishMarks = () => {
+    if (!selectedGroupId) {
+      alert('Please select a group')
+      return
+    }
+
+    const mark = finalMarks[selectedGroupId]
+    if (!mark || mark < 0 || mark > 100) {
+      alert('Please enter a valid mark between 0 and 100')
+      return
+    }
+    console.log(finalReportTask, "task reprt");
+
+    if (!finalReportTask || !finalReportTask.submittedFileName) {
+      alert('No final report has been submitted yet')
+      return
+    }
+
+    if (!window.confirm(`Are you sure you want to publish the final mark of ${mark} for this group? This will make the project publicly visible.`)) {
+      return
+    }
+
+    setSaving(true)
+
+    // Get group information for public display
+    const selectedGroup = supervisedGroups.find(g => g._id === selectedGroupId)
+
+    // Update the task with the mark, mark as verified, and publish
+    updateTask(finalReportTask._id, {
+      status: 'Verified',
+      reviewRemark: `Final Mark: ${mark}/100`,
+      finalMark: mark,
+      isPublished: true,
+      publishedAt: new Date().toISOString(),
+      groupInfo: {
+        id: selectedGroup._id,
+        name: selectedGroup.name,
+        topicName: selectedGroup.topicName,
+        members: selectedGroup.members
+      }
+    })
+
+    setSaving(false)
+    alert(`Final mark of ${mark} published successfully! The project is now visible to the public.`)
+  }
+
+  if (!projectGroups) {
+    return (
+      <div className="flex items-center justify-center min-h-[40vh] text-slate-500">
+        Loading...
+      </div>
+    )
+  }
+
+  const selectedGroup = supervisedGroups.find(
+    g => g._id === selectedGroupId
+  )
+
+  return (
+    <div className="max-w-5xl mx-auto">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-3">
+          <FaTasks className="text-blue-600" />
+          Assign Tasks
+        </h1>
+        <p className="text-slate-600">
+          Assign tasks with submission dates to each group
+        </p>
+      </div>
+
+      {/* Group Select */}
+      <div className="bg-blue-400 p-6 rounded-xl border border-blue-400 mb-6 shadow-xl">
+        <label className="block text-sm font-semibold mb-2 text-gray-800">
+          Select Group
+        </label>
+        <select
+          value={selectedGroupId ?? ''}
+          onChange={e => setSelectedGroupId(e.target.value)} // ✅ FIX
+          className="w-full p-3 border border-gray-400 outline-none rounded-lg text-gray-700"
+        >
+          <option value="">-- Select Group --</option>
+          {supervisedGroups.map(group => (
+            <option key={group._id} value={group._id}>
+              {group.groupName} ({group.selectedMembers.length} members)
+            </option>
+          ))}
+        </select>
+
+        {selectedGroup && (
+          <div className="mt-4 p-4 bg-slate-50 rounded-lg shadow-xl">
+            <p className="text-sm font-medium mb-2 text-gray-800">Group Members:</p>
+            <ul className="text-sm text-slate-600 space-y-1">
+              {selectedGroup.selectedMembers.map(m => (
+                <li key={m._id}>• {m.name} ({m.name})</li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+
+      {/* Task Creation & Management */}
+      {selectedGroupId && (
+        <div className="space-y-6">
+          {/* Create New Task Form */}
+          <div className="bg-gradient-to-br from-blue-400 to-blue-500 p-6 rounded-xl border border-blue-300 shadow-xl">
+            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2 text-white">
+              <FaPlus className="text-white" />
+              Create New Task
+            </h2>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-white">
+                  Task Name
+                </label>
+                <input
+                  type="text"
+                  value={newTaskName}
+                  onChange={(e) => setNewTaskName(e.target.value)}
+                  placeholder="e.g., Topic selection, Abstract submission, etc."
+                  className="w-full p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-2 text-white">
+                  Submission Deadline
+                </label>
+                <input
+                  type="date"
+                  value={newTaskDeadline}
+                  onChange={(e) => setNewTaskDeadline(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                  className="w-full p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
+                />
+              </div>
+
+              <button
+                onClick={handleCreateTask}
+                disabled={saving || !newTaskName.trim() || !newTaskDeadline}
+                className="w-full px-6 py-3 rounded-lg text-white font-semibold bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+              >
+                <FaPlus />
+                Create Task
+              </button>
+            </div>
+          </div>
+
+          {/* Final Report Submission Section */}
+          <div className="bg-red-400 p-6 rounded-xl border border-blue-200 border-l-8 border-l-blue-600 shadow-sm relative overflow-hidden">
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-blue-900 relative z-10">
+              <FaFlagCheckered className="text-blue-600" />
+              Final Report Submission
+              <span className="ml-auto bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border border-blue-200">
+                PROJECT FINALE
+              </span>
+            </h2>
+
+            <div className="space-y-4">
+              {/* Deadline Setting */}
+              <div className="bg-white/20 p-4 rounded-lg">
+                <label className="block text-sm font-semibold mb-2 text-white">
+                  Final Report Deadline
+                </label>
+                <div className="flex gap-3">
+                  <input
+                    type="date"
+                    value={finalReportDeadline}
+                    onChange={(e) => setFinalReportDeadline(e.target.value)}
+                    min={new Date().toISOString().split('T')[0]}
+                    className="flex-1 p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-purple-500 text-gray-700"
+                  />
+                  <button
+                    onClick={handleFinalReportDeadline}
+                    disabled={saving || !finalReportDeadline}
+                    className="px-6 py-3 rounded-lg text-white font-semibold bg-green-700 hover:bg-green-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                  >
+                    <FaSave />
+                    {finalReportTask ? 'Update' : 'Set'} Deadline
+                  </button>
+                </div>
+                {finalReportTask && (
+                  <p className="text-xs text-white mt-2">
+                    ✓ Deadline set: {new Date(finalReportTask.submissionDate).toLocaleDateString()}
+                  </p>
+                )}
+              </div>
+
+              {/* Submission Display & Marking */}
+              {finalReportTask && finalReportTask.submittedFileName ? (
+                <div className="bg-red-200 p-5 rounded-lg shadow-md space-y-4">
+                  <div className="border-b pb-3">
+                    <h3 className="text-lg font-semibold text-gray-800 mb-2">Final Report Submitted</h3>
+                    <div className="space-y-2 text-sm text-gray-700">
+                      <p><strong>File:</strong> {finalReportTask.submittedFile.fileName}</p>
+                      <p><strong>Size:</strong> {Math.round(finalReportTask.submittedFile.fileSize / 1024)} KB</p>
+                      <p><strong>Submitted:</strong> {new Date(finalReportTask.submittedFile.submittedAt).toLocaleString()}</p>
+                      <p><strong>Status:</strong>
+                        <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${finalReportTask.status === 'Verified' ? 'bg-green-100 text-green-700' :
+                          finalReportTask.status === 'Submitted' ? 'bg-blue-100 text-blue-700' :
+                            'bg-gray-100 text-gray-700'
+                          }`}>
+                          {finalReportTask.status}
+                        </span>
+                      </p>
+                    </div>
+                    <a
+                      href={`http://localhost:5000/${finalReportTask.submittedFileName}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 px-3 py-1 mt-2 text-xs font-medium text-blue-700 bg-blue-100 rounded-md hover:bg-blue-200 transition-colors"
+                    >
+                      Download Final Report
+                    </a>
+                  </div>
+
+                  {/* Mark Entry Section */}
+                  <div className="space-y-3">
+                    <label className="block text-sm font-semibold text-gray-800">
+                      Final Mark (out of 100)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      max="100"
+                      value={finalMarks[selectedGroupId] || ''}
+                      onChange={(e) => handleMarkChange(selectedGroupId, e.target.value)}
+                      placeholder="Enter marks (0-100)"
+                      className="w-full p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-purple-500 text-gray-700"
+                      disabled={finalReportTask.status === 'Verified'}
+                    />
+
+                    {finalReportTask.finalMark && (
+                      <p className="text-sm text-green-700 font-medium">
+                        ✓ Published Mark: {finalReportTask.finalMark}/100
+                      </p>
+                    )}
+
+                    <button
+                      onClick={handlePublishMarks}
+                      disabled={saving || finalReportTask.status === 'Verified' || !finalMarks[selectedGroupId]}
+                      className="w-full px-6 py-3 rounded-lg text-white font-semibold bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                    >
+                      <FaSave />
+                      {finalReportTask.status === 'Verified' ? 'Marks Published' : 'Publish Final Marks'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-white/20 p-4 rounded-lg text-center text-white">
+                  <p className="text-sm">
+                    {finalReportTask
+                      ? '⏳ Waiting for students to submit the final report...'
+                      : 'Set a deadline above to enable final report submission'}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Existing Tasks List */}
+          <div className="bg-blue-400 p-6 rounded-xl border border-gray-300 shadow-xl">
+            <h2 className="text-xl font-semibold mb-6 flex items-center gap-2 text-gray-800">
+              <FaTasks className="text-blue-600" />
+              Assigned Tasks ({existingTasks.length})
+            </h2>
+
+            {existingTasks.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <FaTasks className="mx-auto text-4xl mb-3 opacity-30" />
+                <p>No tasks assigned yet. Create your first task above!</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {existingTasks.map((task, index) => (
+                  <div
+                    key={task._id}
+                    className="flex flex-col gap-3 p-4 border border-gray-200 rounded-lg bg-blue-200 shadow-md"
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-2">
+                          <label className="block text-sm font-semibold text-gray-800">
+                            {index + 1}. {task.taskName}
+                          </label>
+                          <button
+                            onClick={() => handleDeleteTask(task._id)}
+                            className="text-red-600 hover:text-red-800 transition-colors"
+                            title="Delete task"
+                          >
+                            <FaTrash />
+                          </button>
+                        </div>
+
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className={`text-xs px-2 py-1 rounded-full font-medium ${task.status === 'Verified' ? 'bg-green-100 text-green-700' :
+                            task.status === 'Submitted' ? 'bg-blue-100 text-blue-700' :
+                              task.status === 'Needs Resubmit' ? 'bg-orange-100 text-orange-700' :
+                                'bg-gray-100 text-gray-700'
+                            }`}>
+                            {task.status}
+                          </span>
+                          <span className="text-xs text-gray-600">
+                            Due Date: {new Date(task.submissionDate).toLocaleDateString('en-GB')}
+                          </span>
+                        </div>
+
+                        <input
+                          type="date"
+                          value={taskDates[task._id] !== undefined ? taskDates[task._id] : (task.submissionDate ? new Date(task.submissionDate).toISOString().split('T')[0] : '')}
+                          min={new Date().toISOString().split('T')[0]}
+                          onChange={(e) =>
+                            handleDateChange(task._id, e.target.value)
+                          }
+                          className="w-full p-2 border border-gray-400 rounded outline-none text-sm"
+                        />
+                      </div>
+
+                      <button
+                        onClick={() => handleAssignTask(task._id)}
+                        disabled={saving}
+                        className="px-4 py-2 mt-6 rounded-lg text-white font-medium bg-green-600 hover:bg-green-700 disabled:bg-gray-400 transition-colors"
+                      >
+                        <FaSave className="inline mr-1" />
+                        Update
+                      </button>
+                    </div>
+
+                    {task.submittedFileName && (
+                      <div className="mt-2 p-3 bg-white/70 border border-gray-300 rounded">
+                        <p className="text-xs font-semibold text-gray-700 mb-1">
+                          Latest submission:
+                        </p>
+                        <p className="text-xs text-gray-700">
+                          File: {task.submittedFileName} (
+                          {task.submittedFileName}),{' '}
+                          {Math.round(task.submittedFileName / 1024)} KB
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          Submitted:{' '}
+                          {new Date(
+                            task.submittedFile.submittedAt
+                          ).toLocaleString()}
+                        </p>
+                        <a
+                          href={`http://localhost:5000/${task.submittedFileName}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1 px-3 py-1 mt-2 text-xs font-medium text-blue-700 bg-blue-100 rounded-md hover:bg-blue-200 transition-colors"
+                        >
+                          Download File
+                        </a>
+                      </div>
+                    )}
+
+                    {task && (
+                      <div className="mt-2 space-y-2">
+                        <textarea
+                          rows={2}
+                          className="w-full text-xs p-2 border border-gray-400 rounded outline-none"
+                          placeholder="Add remark for this task..."
+                          value={
+                            task._id in remarks
+                              ? remarks[task._id]
+                              : task.reviewRemark || ''
+                          } onChange={(e) =>
+                            handleRemarkChange(task._id, e.target.value)
+                          }
+                        />
+
+                        <div className="flex gap-2 flex-wrap">
+                          <button
+                            type="button"
+                            onClick={() => handleReview(task, 'resubmit')}
+                            className="px-3 py-1.5 text-xs rounded bg-orange-500 hover:bg-orange-600 text-white"
+                          >
+                            Send Resubmit
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleReview(task, 'verify')}
+                            className="px-3 py-1.5 text-xs rounded bg-green-600 hover:bg-green-700 text-white"
+                          >
+                            Verified OK
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+export default AddTask
+
+/////////////////////////////////////////////////////////////////////////////////////
+
+// import React, { useState, useEffect } from 'react'
+// import { FaCalendarAlt, FaTasks, FaSave, FaPlus, FaTrash, FaFlagCheckered, FaCheckCircle } from 'react-icons/fa'
+// import { useAdmin } from '../../contexts/AdminContext'
+// import axios from 'axios'
+// const AddTask = () => {
+//   const { projectGroups, tasks, addTask, editTask, updateTask, getTasksByGroup, reviewTask } = useAdmin()
+
+//   const [currentUser, setCurrentUser] = useState(null)
+//   const [supervisedGroups, setSupervisedGroups] = useState([])
+//   const [selectedGroupId, setSelectedGroupId] = useState(null)
+//   const [existingTasks, setExistingTasks] = useState([])
+//   const [taskDates, setTaskDates] = useState({})
+//   const [saving, setSaving] = useState(false)
+//   const [remarks, setRemarks] = useState({})
+//   // console.log(existingTasks, "existig");
+
+//   // New states for dynamic task creation
+//   const [newTaskName, setNewTaskName] = useState('')
+//   const [newTaskDeadline, setNewTaskDeadline] = useState('')
+//   // Final report states
+//   const [finalReportDeadline, setFinalReportDeadline] = useState('')
+//   const [finalMarks, setFinalMarks] = useState({}) // { groupId: mark }
+//   const [finalReportTask, setFinalReportTask] = useState(null)
+
+//   /* ===============================
+//      Load guide + assigned groups
+//   =============================== */
+
+
+//   // const downloadFile = async (filePath, fileName) => {
+//   //   try {
+//   //     const response = await fetch(`http://localhost:5000/${filePath}`);
+
+//   //     const blob = await response.blob();
+
+//   //     const url = window.URL.createObjectURL(blob);
+
+//   //     const a = document.createElement("a");
+//   //     a.href = url;
+//   //     a.download = fileName; // force download name
+
+//   //     document.body.appendChild(a);
+//   //     a.click();
+
+//   //     a.remove();
+//   //     window.URL.revokeObjectURL(url);
+//   //   } catch (err) {
+//   //     console.error("Download failed:", err);
+//   //   }
+//   // };
+
+//   useEffect(() => {
+//     // const userData = localStorage.getItem('user')
+//     // if (!userData) return
+
+//     try {
+//       // const user = JSON.parse(userData)
+//       // if (user.role !== 'guide') return
+
+//       // setCurrentUser(user)
+
+//       const assigned = projectGroups.filter(
+//         g => g.status === 'Accepted'
+//       )
+
+
+
+
+//       setSupervisedGroups(assigned)
+
+//       // Ensure selectedGroupId is always valid
+//       if (assigned.length === 0) {
+//         setSelectedGroupId(null)
+//       } else if (selectedGroupId === null || !assigned.some(g => g._id === selectedGroupId)) {
+//         // If nothing is selected, or selected group is no longer valid, default to the first
+//         setSelectedGroupId(assigned.length > 0 ? assigned[0]._id : null)
+//       }
+//     } catch (err) {
+//       console.error('User parse error:', err)
+//     }
+//   }, [projectGroups, selectedGroupId])
+//   console.log(supervisedGroups, "super");
+
+//   /* ===============================
+//      Sync tasks when group changes
+//   =============================== */
+//   useEffect(() => {
+//     if (!selectedGroupId) {
+//       setExistingTasks([]);
+//       setTaskDates({});
+//       setFinalReportTask(null);
+//       return;
+//     }
+
+//     const groupTasks = tasks.filter(t => t.groupId === selectedGroupId);
+
+//     const finalTask = groupTasks.find(
+//       t => t.taskName === "Final Report Submission"
+//     );
+
+//     const regularTasks = groupTasks.filter(
+//       t => t.taskName !== "Final Report Submission"
+//     );
+
+//     setFinalReportTask(finalTask || null);
+//     setExistingTasks(regularTasks);
+
+//     const dates = {};
+//     regularTasks.forEach(task => {
+//       dates[task._id] = task.submissionDate
+//         ? new Date(task.submissionDate).toISOString().split("T")[0]
+//         : "";
+//     });
+
+//     setTaskDates(dates);
+
+//     if (finalTask) {
+//       setFinalReportDeadline(
+//         new Date(finalTask.submissionDate).toISOString().split("T")[0]
+//       );
+//     }
+
+//   }, [selectedGroupId, tasks]);
+
+//   /* ===============================
+//      Handlers
+//   =============================== */
+//   const handleDateChange = (taskId, date) => {
+//     setTaskDates((prev) => ({
+//       ...prev,
+//       [taskId]: date,
+//     }));
+//   };
+
+//   const handleRemarkChange = (taskId, value) => {
+//     setRemarks(prev => ({
+//       ...prev,
+//       [taskId]: value
+//     }))
+//   }
+
+//   const handleAssignTask = async (taskId) => {
+//     if (!selectedGroupId) {
+//       alert('Please select a group')
+//       return
+//     }
+
+//     const taskToUpdate = existingTasks.find(t => t._id === taskId)
+//     if (!taskToUpdate) {
+//       alert('Task not found')
+//       return
+//     }
+
+//     const submissionDate = taskDates[taskToUpdate._id] !== undefined
+//       ? taskDates[taskToUpdate._id]
+//       : (taskToUpdate.submissionDate ? new Date(taskToUpdate.submissionDate).toISOString().split('T')[0] : '');
+
+//     if (!submissionDate) {
+//       alert('Please select a submission date')
+//       return
+//     }
+
+//     setSaving(true)
+
+//     try {
+//       await editTask(taskToUpdate._id, {
+//         submissionDate: submissionDate,
+//       })
+//       alert('Task date updated successfully!')
+//     } catch (error) {
+//       console.error('Error updating task date:', error)
+//       alert('Failed to update task date')
+//     } finally {
+//       setSaving(false)
+//     }
+//   }
+
+//   const handleReview = (task, action) => {
+//     console.log(task, "oppp");
+
+//     if (!task) return
+//     const remark = remarks[task._id] || ''
+
+//     const status = action === 'verify' ? 'Verified' : 'Needs Resubmit'
+//     reviewTask(task._id, { status, remark })
+//     alert(
+//       action === 'verify'
+//         ? 'Task verified successfully.'
+//         : 'Resubmit requested from students.'
+//     )
+//   }
+
+//   const handleCreateTask = () => {
+//     if (!selectedGroupId) {
+//       alert('Please select a group first')
+//       return
+//     }
+
+//     if (!newTaskName.trim()) {
+//       alert('Please enter a task name')
+//       return
+//     }
+
+//     if (!newTaskDeadline) {
+//       alert('Please select a deadline')
+//       return
+//     }
+
+//     // Check if task with same name already exists for this group
+//     const duplicate = existingTasks.find(t => t.taskName.toLowerCase() === newTaskName.trim().toLowerCase())
+//     if (duplicate) {
+//       alert('A task with this name already exists for this group')
+//       return
+//     }
+
+//     setSaving(true)
+
+//     addTask({
+//       taskName: newTaskName.trim(),
+//       groupId: selectedGroupId,
+//       submissionDate: newTaskDeadline,
+//       // assignedBy: currentUser.id,
+//       status: 'Pending'
+//     })
+
+//     // Reset form
+//     setNewTaskName('')
+//     setNewTaskDeadline('')
+//     setSaving(false)
+//     alert('Task created successfully!')
+//   }
+
+//   const handleDeleteTask = async (taskId) => {
+//     // ⭐ Confirmation popup
+//     const confirmDelete = window.confirm(
+//       "Are you sure you want to delete this task?"
+//     );
+
+//     if (!confirmDelete) return;
+
+//     try {
+//       const res = await axios.delete(
+//         `/deleteTask/${taskId}`,
+//         {
+//           withCredentials: true
+//         }
+//       );
+
+//       console.log(res, "delete");
+
+//       alert("Task deleted successfully ✅");
+//       setExistingTasks(prev => prev.filter(task => task._id !== taskId));
+//       return res.data;
+
+
+//     } catch (error) {
+//       console.error("Delete Task Error:", error);
+//       alert("Failed to delete task ❌");
+//       throw error;
+//     }
+//   };
+
+//   const handleFinalReportDeadline = async () => {
+//     if (!selectedGroupId) {
+//       alert("Please select a group first");
+//       return;
+//     }
+
+//     if (!finalReportDeadline) {
+//       alert("Please select a deadline for the final report");
+//       return;
+//     }
+
+//     setSaving(true);
+
+//     try {
+//       if (finalReportTask) {
+//         // ✅ Update existing task
+//         await editTask(finalReportTask._id, {
+//           submissionDate: finalReportDeadline,
+//         });
+//         alert("Final report deadline updated!");
+//       } else {
+//         // ✅ Create new task
+//         await addTask({
+//           taskName: "Final Report Submission",
+//           groupId: selectedGroupId,
+//           submissionDate: finalReportDeadline,
+//           status: "Pending",
+//         });
+//         alert("Final report task created!");
+//       }
+//     } catch (error) {
+//       console.error("Error setting final report deadline:", error);
+//       alert("Failed to set deadline");
+//     } finally {
+//       setSaving(false);
+//     }
+//   };
+
+//   const handleMarkChange = (groupId, mark) => {
+//     setFinalMarks(prev => ({
+//       ...prev,
+//       [groupId]: mark
+//     }))
+//   }
+
+//   const handlePublishMarks = () => {
+//     if (!selectedGroupId) {
+//       alert('Please select a group')
+//       return
+//     }
+
+//     const mark = finalMarks[selectedGroupId]
+//     if (!mark || mark < 0 || mark > 100) {
+//       alert('Please enter a valid mark between 0 and 100')
+//       return
+//     }
+//     console.log(finalReportTask, "task reprt");
+
+//     if (!finalReportTask || !finalReportTask.submittedFileName) {
+//       alert('No final report has been submitted yet')
+//       return
+//     }
+
+//     if (!window.confirm(`Are you sure you want to publish the final mark of ${mark} for this group? This will make the project publicly visible.`)) {
+//       return
+//     }
+
+//     setSaving(true)
+
+//     // Get group information for public display
+//     const selectedGroup = supervisedGroups.find(g => g._id === selectedGroupId)
+
+//     // Update the task with the mark, mark as verified, and publish
+//     updateTask(finalReportTask._id, {
+//       status: 'Verified',
+//       reviewRemark: `Final Mark: ${mark}/100`,
+//       finalMark: mark,
+//       isPublished: true,
+//       publishedAt: new Date().toISOString(),
+//       groupInfo: {
+//         id: selectedGroup._id,
+//         name: selectedGroup.name,
+//         topicName: selectedGroup.topicName,
+//         members: selectedGroup.members
+//       }
+//     })
+
+//     setSaving(false)
+//     alert(`Final mark of ${mark} published successfully! The project is now visible to the public.`)
+//   }
+
+//   if (!projectGroups) {
+//     return (
+//       <div className="flex items-center justify-center min-h-[40vh] text-slate-500">
+//         Loading...
+//       </div>
+//     )
+//   }
+
+//   const selectedGroup = supervisedGroups.find(
+//     g => g._id === selectedGroupId
+//   )
+
+//   return (
+//     <div className="max-w-5xl mx-auto">
+//       {/* Header */}
+//       <div className="mb-8">
+//         <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-3">
+//           <FaTasks className="text-blue-600" />
+//           Assign Tasks
+//         </h1>
+//         <p className="text-slate-600">
+//           Assign tasks with submission dates to each group
+//         </p>
+//       </div>
+
+//       {/* Group Select */}
+//       <div className="bg-blue-400 p-6 rounded-xl border border-blue-400 mb-6 shadow-xl">
+//         <label className="block text-sm font-semibold mb-2 text-gray-800">
+//           Select Group
+//         </label>
+//         <select
+//           value={selectedGroupId ?? ''}
+//           onChange={e => setSelectedGroupId(e.target.value)} // ✅ FIX
+//           className="w-full p-3 border border-gray-400 outline-none rounded-lg text-gray-700"
+//         >
+//           <option value="">-- Select Group --</option>
+//           {supervisedGroups.map(group => (
+//             <option key={group._id} value={group._id}>
+//               {group.groupName} ({group.selectedMembers.length} members)
+//             </option>
+//           ))}
+//         </select>
+
+//         {selectedGroup && (
+//           <div className="mt-4 p-4 bg-slate-50 rounded-lg shadow-xl">
+//             <p className="text-sm font-medium mb-2 text-gray-800">Group Members:</p>
+//             <ul className="text-sm text-slate-600 space-y-1">
+//               {selectedGroup.selectedMembers.map(m => (
+//                 <li key={m._id}>• {m.name} ({m.name})</li>
+//               ))}
+//             </ul>
+//           </div>
+//         )}
+//       </div>
+
+//       {/* Task Creation & Management */}
+//       {selectedGroupId && (
+//         <div className="space-y-6">
+//           {/* Create New Task Form */}
+//           <div className="bg-gradient-to-br from-blue-400 to-blue-500 p-6 rounded-xl border border-blue-300 shadow-xl">
+//             <h2 className="text-xl font-semibold mb-4 flex items-center gap-2 text-white">
+//               <FaPlus className="text-white" />
+//               Create New Task
+//             </h2>
+
+//             <div className="space-y-4">
+//               <div>
+//                 <label className="block text-sm font-semibold mb-2 text-white">
+//                   Task Name
+//                 </label>
+//                 <input
+//                   type="text"
+//                   value={newTaskName}
+//                   onChange={(e) => setNewTaskName(e.target.value)}
+//                   placeholder="e.g., Topic selection, Abstract submission, etc."
+//                   className="w-full p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
+//                 />
+//               </div>
+
+//               <div>
+//                 <label className="block text-sm font-semibold mb-2 text-white">
+//                   Submission Deadline
+//                 </label>
+//                 <input
+//                   type="date"
+//                   value={newTaskDeadline}
+//                   onChange={(e) => setNewTaskDeadline(e.target.value)}
+//                   min={new Date().toISOString().split('T')[0]}
+//                   className="w-full p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
+//                 />
+//               </div>
+
+//               <button
+//                 onClick={handleCreateTask}
+//                 disabled={saving || !newTaskName.trim() || !newTaskDeadline}
+//                 className="w-full px-6 py-3 rounded-lg text-white font-semibold bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+//               >
+//                 <FaPlus />
+//                 Create Task
+//               </button>
+//             </div>
+//           </div>
+
+//           {/* Final Report Submission Section */}
+//           <div className="bg-red-400 p-6 rounded-xl border border-blue-200 border-l-8 border-l-blue-600 shadow-sm relative overflow-hidden">
+//             <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-blue-900 relative z-10">
+//               <FaFlagCheckered className="text-blue-600" />
+//               Final Report Submission
+//               <span className="ml-auto bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border border-blue-200">
+//                 PROJECT FINALE
+//               </span>
+//             </h2>
+
+//             <div className="space-y-4">
+//               {/* Deadline Setting */}
+//               <div className="bg-white/20 p-4 rounded-lg">
+//                 <label className="block text-sm font-semibold mb-2 text-white">
+//                   Final Report Deadline
+//                 </label>
+//                 <div className="flex gap-3">
+//                   <input
+//                     type="date"
+//                     value={finalReportDeadline}
+//                     onChange={(e) => setFinalReportDeadline(e.target.value)}
+//                     min={new Date().toISOString().split('T')[0]}
+//                     className="flex-1 p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-purple-500 text-gray-700"
+//                   />
+//                   <button
+//                     onClick={handleFinalReportDeadline}
+//                     disabled={saving || !finalReportDeadline}
+//                     className="px-6 py-3 rounded-lg text-white font-semibold bg-green-700 hover:bg-green-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+//                   >
+//                     <FaSave />
+//                     {finalReportTask ? 'Update' : 'Set'} Deadline
+//                   </button>
+//                 </div>
+//                 {finalReportTask && (
+//                   <p className="text-xs text-white mt-2">
+//                     ✓ Deadline set: {new Date(finalReportTask.submissionDate).toLocaleDateString()}
+//                   </p>
+//                 )}
+//               </div>
+
+//               {/* Submission Display & Marking */}
+//               {finalReportTask && finalReportTask.submittedFileName ? (
+//                 <div className="bg-red-200 p-5 rounded-lg shadow-md space-y-4">
+//                   <div className="border-b pb-3">
+//                     <h3 className="text-lg font-semibold text-gray-800 mb-2">Final Report Submitted</h3>
+//                     <div className="space-y-2 text-sm text-gray-700">
+//                       <p><strong>File:</strong> {finalReportTask.submittedFile.fileName}</p>
+//                       <p><strong>Size:</strong> {Math.round(finalReportTask.submittedFile.fileSize / 1024)} KB</p>
+//                       <p><strong>Submitted:</strong> {new Date(finalReportTask.submittedFile.submittedAt).toLocaleString()}</p>
+//                       <p><strong>Status:</strong>
+//                         <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${finalReportTask.status === 'Verified' ? 'bg-green-100 text-green-700' :
+//                           finalReportTask.status === 'Submitted' ? 'bg-blue-100 text-blue-700' :
+//                             'bg-gray-100 text-gray-700'
+//                           }`}>
+//                           {finalReportTask.status}
+//                         </span>
+//                       </p>
+//                     </div>
+//                     <a
+//                       href={`http://localhost:5000/${finalReportTask.submittedFileName}`}
+//                       target="_blank"
+//                       rel="noopener noreferrer"
+//                       className="inline-flex items-center gap-1 px-3 py-1 mt-2 text-xs font-medium text-blue-700 bg-blue-100 rounded-md hover:bg-blue-200 transition-colors"
+//                     >
+//                       Download Final Report
+//                     </a>
+//                   </div>
+
+//                   {/* Mark Entry Section */}
+//                   <div className="space-y-3">
+//                     <label className="block text-sm font-semibold text-gray-800">
+//                       Final Mark (out of 100)
+//                     </label>
+//                     <input
+//                       type="number"
+//                       min="0"
+//                       max="100"
+//                       value={finalMarks[selectedGroupId] || ''}
+//                       onChange={(e) => handleMarkChange(selectedGroupId, e.target.value)}
+//                       placeholder="Enter marks (0-100)"
+//                       className="w-full p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-purple-500 text-gray-700"
+//                       disabled={finalReportTask.status === 'Verified'}
+//                     />
+
+//                     {finalReportTask.finalMark && (
+//                       <p className="text-sm text-green-700 font-medium">
+//                         ✓ Published Mark: {finalReportTask.finalMark}/100
+//                       </p>
+//                     )}
+
+//                     <button
+//                       onClick={handlePublishMarks}
+//                       disabled={saving || finalReportTask.status === 'Verified' || !finalMarks[selectedGroupId]}
+//                       className="w-full px-6 py-3 rounded-lg text-white font-semibold bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+//                     >
+//                       <FaSave />
+//                       {finalReportTask.status === 'Verified' ? 'Marks Published' : 'Publish Final Marks'}
+//                     </button>
+//                   </div>
+//                 </div>
+//               ) : (
+//                 <div className="bg-white/20 p-4 rounded-lg text-center text-white">
+//                   <p className="text-sm">
+//                     {finalReportTask
+//                       ? '⏳ Waiting for students to submit the final report...'
+//                       : 'Set a deadline above to enable final report submission'}
+//                   </p>
+//                 </div>
+//               )}
+//             </div>
+//           </div>
+
+//           {/* Existing Tasks List */}
+//           <div className="bg-blue-400 p-6 rounded-xl border border-gray-300 shadow-xl">
+//             <h2 className="text-xl font-semibold mb-6 flex items-center gap-2 text-gray-800">
+//               <FaTasks className="text-blue-600" />
+//               Assigned Tasks ({existingTasks.length})
+//             </h2>
+
+//             {existingTasks.length === 0 ? (
+//               <div className="text-center py-8 text-gray-500">
+//                 <FaTasks className="mx-auto text-4xl mb-3 opacity-30" />
+//                 <p>No tasks assigned yet. Create your first task above!</p>
+//               </div>
+//             ) : (
+//               <div className="space-y-4">
+//                 {existingTasks.map((task, index) => (
+//                   <div
+//                     key={task._id}
+//                     className="flex flex-col gap-3 p-4 border border-gray-200 rounded-lg bg-blue-200 shadow-md"
+//                   >
+//                     <div className="flex items-start gap-4">
+//                       <div className="flex-1">
+//                         <div className="flex items-center justify-between mb-2">
+//                           <label className="block text-sm font-semibold text-gray-800">
+//                             {index + 1}. {task.taskName}
+//                           </label>
+//                           <button
+//                             onClick={() => handleDeleteTask(task._id)}
+//                             className="text-red-600 hover:text-red-800 transition-colors"
+//                             title="Delete task"
+//                           >
+//                             <FaTrash />
+//                           </button>
+//                         </div>
+
+//                         <div className="flex items-center gap-2 mb-2">
+//                           <span className={`text-xs px-2 py-1 rounded-full font-medium ${task.status === 'Verified' ? 'bg-green-100 text-green-700' :
+//                             task.status === 'Submitted' ? 'bg-blue-100 text-blue-700' :
+//                               task.status === 'Needs Resubmit' ? 'bg-orange-100 text-orange-700' :
+//                                 'bg-gray-100 text-gray-700'
+//                             }`}>
+//                             {task.status}
+//                           </span>
+//                           <span className="text-xs text-gray-600">
+//                             Due Date: {new Date(task.submissionDate).toLocaleDateString('en-GB')}
+//                           </span>
+//                         </div>
+
+//                         <input
+//                           type="date"
+//                           value={taskDates[task._id] !== undefined ? taskDates[task._id] : (task.submissionDate ? new Date(task.submissionDate).toISOString().split('T')[0] : '')}
+//                           min={new Date().toISOString().split('T')[0]}
+//                           onChange={(e) =>
+//                             handleDateChange(task._id, e.target.value)
+//                           }
+//                           className="w-full p-2 border border-gray-400 rounded outline-none text-sm"
+//                         />
+//                       </div>
+
+//                       <button
+//                         onClick={() => handleAssignTask(task._id)}
+//                         disabled={saving}
+//                         className="px-4 py-2 mt-6 rounded-lg text-white font-medium bg-green-600 hover:bg-green-700 disabled:bg-gray-400 transition-colors"
+//                       >
+//                         <FaSave className="inline mr-1" />
+//                         Update
+//                       </button>
+//                     </div>
+
+//                     {task.submittedFileName && (
+//                       <div className="mt-2 p-3 bg-white/70 border border-gray-300 rounded">
+//                         <p className="text-xs font-semibold text-gray-700 mb-1">
+//                           Latest submission:
+//                         </p>
+//                         <p className="text-xs text-gray-700">
+//                           File: {task.submittedFileName} (
+//                           {task.submittedFileName}),{' '}
+//                           {Math.round(task.submittedFileName / 1024)} KB
+//                         </p>
+//                         <p className="text-xs text-gray-500">
+//                           Submitted:{' '}
+//                           {new Date(
+//                             task.submittedFile.submittedAt
+//                           ).toLocaleString()}
+//                         </p>
+//                         <a
+//                           href={`http://localhost:5000/${task.submittedFileName}`}
+//                           target="_blank"
+//                           rel="noopener noreferrer"
+//                           className="inline-flex items-center gap-1 px-3 py-1 mt-2 text-xs font-medium text-blue-700 bg-blue-100 rounded-md hover:bg-blue-200 transition-colors"
+//                         >
+//                           Download File
+//                         </a>
+//                       </div>
+//                     )}
+
+//                     {task && (
+//                       <div className="mt-2 space-y-2">
+//                         <textarea
+//                           rows={2}
+//                           className="w-full text-xs p-2 border border-gray-400 rounded outline-none"
+//                           placeholder="Add remark for this task..."
+//                           value={
+//                             task._id in remarks
+//                               ? remarks[task._id]
+//                               : task.reviewRemark || ''
+//                           } onChange={(e) =>
+//                             handleRemarkChange(task._id, e.target.value)
+//                           }
+//                         />
+
+//                         <div className="flex gap-2 flex-wrap">
+//                           <button
+//                             type="button"
+//                             onClick={() => handleReview(task, 'resubmit')}
+//                             className="px-3 py-1.5 text-xs rounded bg-orange-500 hover:bg-orange-600 text-white"
+//                           >
+//                             Send Resubmit
+//                           </button>
+//                           <button
+//                             type="button"
+//                             onClick={() => handleReview(task, 'verify')}
+//                             className="px-3 py-1.5 text-xs rounded bg-green-600 hover:bg-green-700 text-white"
+//                           >
+//                             Verified OK
+//                           </button>
+//                         </div>
+//                       </div>
+//                     )}
+//                   </div>
+//                 ))}
+//               </div>
+//             )}
+//           </div>
+//         </div>
+//       )}
+//     </div>
+//   )
+// }
+
+// export default AddTask
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+// import React, { useState, useEffect } from 'react'
+// import { FaCalendarAlt, FaTasks, FaSave, FaPlus, FaTrash, FaFlagCheckered, FaCheckCircle, FaChevronDown, FaClock, FaFileAlt, FaUsers, FaMedal } from 'react-icons/fa'
+// import { useAdmin } from '../../contexts/AdminContext'
+// import axios from 'axios'
+
+// const StatusBadge = ({ status }) => {
+//   const config = {
+//     Verified: 'bg-emerald-50 text-emerald-700 border border-emerald-200 ring-1 ring-emerald-100',
+//     Submitted: 'bg-blue-50 text-blue-700 border border-blue-200 ring-1 ring-blue-100',
+//     'Needs Resubmit': 'bg-amber-50 text-amber-700 border border-amber-200 ring-1 ring-amber-100',
+//     Pending: 'bg-gray-100 text-gray-500 border border-gray-200',
+//   }
+//   const dotConfig = {
+//     Verified: 'bg-emerald-500',
+//     Submitted: 'bg-blue-500',
+//     'Needs Resubmit': 'bg-amber-500',
+//     Pending: 'bg-gray-400',
+//   }
+//   const cls = config[status] || config.Pending
+//   const dot = dotConfig[status] || dotConfig.Pending
+//   return (
+//     <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold ${cls}`}>
+//       <span className={`w-1.5 h-1.5 rounded-full ${dot}`} />
+//       {status}
+//     </span>
+//   )
+// }
+
+// const SectionHeader = ({ icon: Icon, title, subtitle, iconClass, iconBgClass }) => (
+//   <div className="flex items-start gap-3 mb-5">
+//     <div className={`p-2.5 rounded-xl mt-0.5 shrink-0 ${iconBgClass}`}>
+//       <Icon className={`w-4 h-4 ${iconClass}`} />
+//     </div>
+//     <div>
+//       <h2 className="text-sm font-bold text-gray-800 tracking-tight">{title}</h2>
+//       {subtitle && <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>}
+//     </div>
+//   </div>
+// )
+
+// const AddTask = () => {
+//   const { projectGroups, tasks, addTask, editTask, updateTask, reviewTask } = useAdmin()
+
+//   const [supervisedGroups, setSupervisedGroups] = useState([])
+//   const [selectedGroupId, setSelectedGroupId] = useState(null)
+//   const [existingTasks, setExistingTasks] = useState([])
+//   const [taskDates, setTaskDates] = useState({})
+//   const [saving, setSaving] = useState(false)
+//   const [remarks, setRemarks] = useState({})
+//   const [newTaskName, setNewTaskName] = useState('')
+//   const [newTaskDeadline, setNewTaskDeadline] = useState('')
+//   const [finalReportDeadline, setFinalReportDeadline] = useState('')
+//   const [finalMarks, setFinalMarks] = useState({})
+//   const [finalReportTask, setFinalReportTask] = useState(null)
+//   const [expandedTasks, setExpandedTasks] = useState({})
+
+//   useEffect(() => {
+//     try {
+//       const assigned = projectGroups.filter(g => g.status === 'Accepted')
+//       setSupervisedGroups(assigned)
+//       if (assigned.length === 0) {
+//         setSelectedGroupId(null)
+//       } else if (selectedGroupId === null || !assigned.some(g => g._id === selectedGroupId)) {
+//         setSelectedGroupId(assigned.length > 0 ? assigned[0]._id : null)
+//       }
+//     } catch (err) {
+//       console.error('User parse error:', err)
+//     }
+//   }, [projectGroups, selectedGroupId])
+
+//   useEffect(() => {
+//     if (!selectedGroupId) {
+//       setExistingTasks([])
+//       setTaskDates({})
+//       setFinalReportTask(null)
+//       return
+//     }
+//     const groupTasks = tasks.filter(t => t.groupId === selectedGroupId)
+//     const finalTask = groupTasks.find(t => t.taskName === 'Final Report Submission')
+//     const regularTasks = groupTasks.filter(t => t.taskName !== 'Final Report Submission')
+//     setFinalReportTask(finalTask || null)
+//     setExistingTasks(regularTasks)
+//     const dates = {}
+//     regularTasks.forEach(task => {
+//       dates[task._id] = task.submissionDate ? new Date(task.submissionDate).toISOString().split('T')[0] : ''
+//     })
+//     setTaskDates(dates)
+//     if (finalTask) {
+//       setFinalReportDeadline(new Date(finalTask.submissionDate).toISOString().split('T')[0])
+//     }
+//   }, [selectedGroupId, tasks])
+
+//   const handleDateChange = (taskId, date) => setTaskDates(prev => ({ ...prev, [taskId]: date }))
+//   const handleRemarkChange = (taskId, value) => setRemarks(prev => ({ ...prev, [taskId]: value }))
+//   const toggleExpand = (taskId) => setExpandedTasks(prev => ({ ...prev, [taskId]: !prev[taskId] }))
+
+//   const handleAssignTask = async (taskId) => {
+//     if (!selectedGroupId) return alert('Please select a group')
+//     const taskToUpdate = existingTasks.find(t => t._id === taskId)
+//     if (!taskToUpdate) return alert('Task not found')
+//     const submissionDate = taskDates[taskToUpdate._id] || (taskToUpdate.submissionDate ? new Date(taskToUpdate.submissionDate).toISOString().split('T')[0] : '')
+//     if (!submissionDate) return alert('Please select a submission date')
+//     setSaving(true)
+//     try {
+//       await editTask(taskToUpdate._id, { submissionDate })
+//       alert('Task date updated successfully!')
+//     } catch {
+//       alert('Failed to update task date')
+//     } finally {
+//       setSaving(false)
+//     }
+//   }
+
+//   const handleReview = (task, action) => {
+//     if (!task) return
+//     const remark = remarks[task._id] || ''
+//     const status = action === 'verify' ? 'Verified' : 'Needs Resubmit'
+//     reviewTask(task._id, { status, remark })
+//     alert(action === 'verify' ? 'Task verified successfully.' : 'Resubmit requested from students.')
+//   }
+
+//   const handleCreateTask = () => {
+//     if (!selectedGroupId) return alert('Please select a group first')
+//     if (!newTaskName.trim()) return alert('Please enter a task name')
+//     if (!newTaskDeadline) return alert('Please select a deadline')
+//     const duplicate = existingTasks.find(t => t.taskName.toLowerCase() === newTaskName.trim().toLowerCase())
+//     if (duplicate) return alert('A task with this name already exists for this group')
+//     setSaving(true)
+//     addTask({ taskName: newTaskName.trim(), groupId: selectedGroupId, submissionDate: newTaskDeadline, status: 'Pending' })
+//     setNewTaskName('')
+//     setNewTaskDeadline('')
+//     setSaving(false)
+//     alert('Task created successfully!')
+//   }
+
+//   const handleDeleteTask = async (taskId) => {
+//     if (!window.confirm('Are you sure you want to delete this task?')) return
+//     try {
+//       const res = await axios.delete(`/deleteTask/${taskId}`, { withCredentials: true })
+//       alert('Task deleted successfully ✅')
+//       setExistingTasks(prev => prev.filter(task => task._id !== taskId))
+//       return res.data
+//     } catch {
+//       alert('Failed to delete task ❌')
+//     }
+//   }
+
+//   const handleFinalReportDeadline = async () => {
+//     if (!selectedGroupId) return alert('Please select a group first')
+//     if (!finalReportDeadline) return alert('Please select a deadline for the final report')
+//     setSaving(true)
+//     try {
+//       if (finalReportTask) {
+//         await editTask(finalReportTask._id, { submissionDate: finalReportDeadline })
+//         alert('Final report deadline updated!')
+//       } else {
+//         await addTask({ taskName: 'Final Report Submission', groupId: selectedGroupId, submissionDate: finalReportDeadline, status: 'Pending' })
+//         alert('Final report task created!')
+//       }
+//     } catch {
+//       alert('Failed to set deadline')
+//     } finally {
+//       setSaving(false)
+//     }
+//   }
+
+//   const handleMarkChange = (groupId, mark) => setFinalMarks(prev => ({ ...prev, [groupId]: mark }))
+
+//   const handlePublishMarks = () => {
+//     if (!selectedGroupId) return alert('Please select a group')
+//     const mark = finalMarks[selectedGroupId]
+//     if (!mark || mark < 0 || mark > 100) return alert('Please enter a valid mark between 0 and 100')
+//     if (!finalReportTask || !finalReportTask.submittedFileName) return alert('No final report has been submitted yet')
+//     if (!window.confirm(`Publish final mark of ${mark} for this group? This will make the project publicly visible.`)) return
+//     setSaving(true)
+//     const selectedGroup = supervisedGroups.find(g => g._id === selectedGroupId)
+//     updateTask(finalReportTask._id, {
+//       status: 'Verified', reviewRemark: `Final Mark: ${mark}/100`, finalMark: mark, isPublished: true,
+//       publishedAt: new Date().toISOString(),
+//       groupInfo: { id: selectedGroup._id, name: selectedGroup.name, topicName: selectedGroup.topicName, members: selectedGroup.members }
+//     })
+//     setSaving(false)
+//     alert(`Final mark of ${mark} published successfully!`)
+//   }
+
+//   if (!projectGroups) {
+//     return (
+//       <div className="flex items-center justify-center min-h-screen bg-gray-50">
+//         <div className="flex items-center gap-3 text-gray-400">
+//           <div className="w-5 h-5 border-2 border-gray-200 border-t-blue-500 rounded-full animate-spin" />
+//           <span className="text-sm font-medium">Loading workspace...</span>
+//         </div>
+//       </div>
+//     )
+//   }
+
+//   const selectedGroup = supervisedGroups.find(g => g._id === selectedGroupId)
+//   const today = new Date().toISOString().split('T')[0]
+//   const inputBase = "w-full bg-white border border-gray-200 text-gray-800 placeholder-gray-400 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50 transition-all shadow-sm"
+
+//   return (
+//     <div className="min-h-screen bg-gray-300 p-3 rounded-xl">
+//       <div className="max-w-6xl mx-auto">
+
+//         {/* Page Header */}
+//         <div className="flex items-start justify-between mb-8">
+//           <div>
+//             <div className="flex items-center gap-2 mb-2">
+//               <div className="bg-blue-50 border border-blue-100 p-2 rounded-lg">
+//                 <FaTasks className="text-blue-500 w-4 h-4" />
+//               </div>
+//               <span className="text-blue-600 border border-blue-100 bg-blue-50 text-xs font-semibold uppercase tracking-widest px-2.5 py-0.5 rounded-full">
+//                 Guide Panel
+//               </span>
+//             </div>
+//             <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Task Management</h1>
+//             <p className="text-gray-400 text-sm mt-1">Assign deadlines, review submissions & publish marks</p>
+//           </div>
+//           <div className="bg-white border border-gray-200 rounded-xl px-4 py-3 text-right shadow-sm">
+//             <p className="text-gray-400 text-xs uppercase tracking-widest mb-0.5">Groups</p>
+//             <p className="text-blue-500 text-xl font-bold">{supervisedGroups.length}</p>
+//           </div>
+//         </div>
+
+//         {/* Group Selector */}
+//         <div className="bg-white border border-gray-200 rounded-2xl p-5 mb-5 shadow-sm">
+//           <SectionHeader
+//             icon={FaUsers} title="Select Group" subtitle="Choose a project group to manage"
+//             iconClass="text-blue-500" iconBgClass="bg-blue-50 border border-blue-100"
+//           />
+//           <div className="relative">
+//             <select
+//               value={selectedGroupId ?? ''}
+//               onChange={e => setSelectedGroupId(e.target.value)}
+//               className="w-full bg-white border border-gray-200 text-gray-700 rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50 transition-all appearance-none cursor-pointer shadow-sm"
+//             >
+//               <option value="">— Select a group —</option>
+//               {supervisedGroups.map(group => (
+//                 <option key={group._id} value={group._id}>
+//                   {group.groupName} · {group.selectedMembers.length} members
+//                 </option>
+//               ))}
+//             </select>
+//             <FaChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none w-3 h-3" />
+//           </div>
+
+//           {selectedGroup && (
+//             <div className="mt-3 bg-gray-50 border border-gray-100 rounded-xl px-4 py-3 flex flex-wrap gap-2">
+//               {selectedGroup.selectedMembers.map(m => (
+//                 <span key={m._id} className="bg-white text-blue-600 border border-blue-100 text-xs font-medium px-3 py-1 rounded-full shadow-sm">
+//                   {m.name}
+//                 </span>
+//               ))}
+//             </div>
+//           )}
+//         </div>
+
+//         {selectedGroupId && (
+//           <div className="space-y-5">
+
+//             {/* Create New Task */}
+//             <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+//               <SectionHeader
+//                 icon={FaPlus} title="Create New Task" subtitle="Add a milestone for this group"
+//                 iconClass="text-emerald-600" iconBgClass="bg-emerald-50 border border-emerald-100"
+//               />
+//               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+//                 <div>
+//                   <label className="block text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1.5">Task Name</label>
+//                   <input
+//                     type="text"
+//                     value={newTaskName}
+//                     onChange={e => setNewTaskName(e.target.value)}
+//                     placeholder="e.g., Abstract Submission"
+//                     className={inputBase}
+//                   />
+//                 </div>
+//                 <div>
+//                   <label className="block text-xs font-semibold uppercase tracking-widest text-gray-400 mb-1.5">Deadline</label>
+//                   <input
+//                     type="date"
+//                     value={newTaskDeadline}
+//                     onChange={e => setNewTaskDeadline(e.target.value)}
+//                     min={today}
+//                     className={inputBase}
+//                   />
+//                 </div>
+//               </div>
+//               <button
+//                 onClick={handleCreateTask}
+//                 disabled={saving || !newTaskName.trim() || !newTaskDeadline}
+//                 className="mt-3 w-full py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all bg-emerald-500 text-white hover:bg-emerald-600 shadow-sm disabled:bg-gray-100 disabled:text-gray-400 disabled:shadow-none disabled:cursor-not-allowed"
+//               >
+//                 <FaPlus className="w-3 h-3" /> Create Task
+//               </button>
+//             </div>
+
+//             {/* Final Report Section */}
+//             <div className="bg-white border border-gray-200 border-l-4 border-l-violet-500 rounded-2xl p-5 shadow-sm">
+//               <div className="flex items-start justify-between mb-5">
+//                 <SectionHeader
+//                   icon={FaFlagCheckered} title="Final Report Submission" subtitle="Project milestone & marking"
+//                   iconClass="text-violet-600" iconBgClass="bg-violet-50 border border-violet-100"
+//                 />
+//                 <span className="bg-violet-50 text-violet-600 border border-violet-100 text-xs font-bold uppercase tracking-widest px-2.5 py-1 rounded-full shrink-0 mt-1">
+//                   Finale
+//                 </span>
+//               </div>
+
+//               {/* Deadline picker */}
+//               <div className="bg-gray-50 border border-gray-100 rounded-xl p-4 mb-4">
+//                 <label className="block text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2">Final Report Deadline</label>
+//                 <div className="flex gap-3">
+//                   <input
+//                     type="date"
+//                     value={finalReportDeadline}
+//                     onChange={e => setFinalReportDeadline(e.target.value)}
+//                     min={today}
+//                     className={`${inputBase} flex-1`}
+//                   />
+//                   <button
+//                     onClick={handleFinalReportDeadline}
+//                     disabled={saving || !finalReportDeadline}
+//                     className="px-5 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 whitespace-nowrap transition-all bg-violet-500 text-white hover:bg-violet-600 shadow-sm disabled:bg-gray-100 disabled:text-gray-400 disabled:shadow-none disabled:cursor-not-allowed"
+//                   >
+//                     <FaSave className="w-3 h-3" />
+//                     {finalReportTask ? 'Update' : 'Set'}
+//                   </button>
+//                 </div>
+//                 {finalReportTask && (
+//                   <p className="text-xs text-violet-500 mt-2 flex items-center gap-1.5">
+//                     <FaCheckCircle className="w-3 h-3" />
+//                     Deadline: {new Date(finalReportTask.submissionDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+//                   </p>
+//                 )}
+//               </div>
+
+//               {finalReportTask && finalReportTask.submittedFileName ? (
+//                 <div className="bg-gray-50 border border-gray-100 rounded-xl p-4 space-y-4">
+//                   <div className="flex items-start justify-between">
+//                     <div>
+//                       <h3 className="text-sm font-semibold text-gray-800 mb-3">Submitted Report</h3>
+//                       <div className="space-y-1.5 text-xs text-gray-500">
+//                         <p><span className="text-gray-700 font-medium">File:</span> {finalReportTask.submittedFile.fileName}</p>
+//                         <p><span className="text-gray-700 font-medium">Size:</span> {Math.round(finalReportTask.submittedFile.fileSize / 1024)} KB</p>
+//                         <p><span className="text-gray-700 font-medium">Submitted:</span> {new Date(finalReportTask.submittedFile.submittedAt).toLocaleString()}</p>
+//                       </div>
+//                     </div>
+//                     <StatusBadge status={finalReportTask.status} />
+//                   </div>
+//                   <a
+//                     href={`http://localhost:5000/${finalReportTask.submittedFileName}`}
+//                     target="_blank" rel="noopener noreferrer"
+//                     className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-100 transition-colors"
+//                   >
+//                     <FaFileAlt className="w-3 h-3" /> Download Report
+//                   </a>
+
+//                   <div className="border-t border-gray-200 pt-4 space-y-3">
+//                     <label className="block text-xs font-semibold uppercase tracking-widest text-gray-400">Final Mark (0–100)</label>
+//                     <input
+//                       type="number" min="0" max="100"
+//                       value={finalMarks[selectedGroupId] || ''}
+//                       onChange={e => handleMarkChange(selectedGroupId, e.target.value)}
+//                       placeholder="Enter mark"
+//                       disabled={finalReportTask.status === 'Verified'}
+//                       className={`${inputBase} disabled:bg-gray-50 disabled:text-gray-400 disabled:cursor-not-allowed`}
+//                     />
+//                     {finalReportTask.finalMark && (
+//                       <p className="text-xs text-emerald-600 flex items-center gap-1.5 font-medium">
+//                         <FaMedal className="w-3 h-3" /> Published: {finalReportTask.finalMark}/100
+//                       </p>
+//                     )}
+//                     <button
+//                       onClick={handlePublishMarks}
+//                       disabled={saving || finalReportTask.status === 'Verified' || !finalMarks[selectedGroupId]}
+//                       className="w-full py-2.5 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-all bg-emerald-500 text-white hover:bg-emerald-600 shadow-sm disabled:bg-gray-100 disabled:text-gray-400 disabled:shadow-none disabled:cursor-not-allowed"
+//                     >
+//                       <FaMedal className="w-3 h-3" />
+//                       {finalReportTask.status === 'Verified' ? 'Marks Published ✓' : 'Publish Final Marks'}
+//                     </button>
+//                   </div>
+//                 </div>
+//               ) : (
+//                 <div className="bg-gray-50 border border-dashed border-gray-200 rounded-xl p-8 text-center">
+//                   <FaClock className="text-gray-300 w-6 h-6 mx-auto mb-2" />
+//                   <p className="text-gray-400 text-xs">
+//                     {finalReportTask ? 'Awaiting student submission...' : 'Set a deadline above to enable final report submission'}
+//                   </p>
+//                 </div>
+//               )}
+//             </div>
+
+//             {/* Assigned Tasks List */}
+//             <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">
+//               <SectionHeader
+//                 icon={FaTasks}
+//                 title="Assigned Tasks"
+//                 subtitle={`${existingTasks.length} task${existingTasks.length !== 1 ? 's' : ''} for this group`}
+//                 iconClass="text-amber-600"
+//                 iconBgClass="bg-amber-50 border border-amber-100"
+//               />
+
+//               {existingTasks.length === 0 ? (
+//                 <div className="bg-gray-50 border border-dashed border-gray-200 rounded-xl p-12 text-center">
+//                   <FaTasks className="text-gray-200 w-7 h-7 mx-auto mb-3" />
+//                   <p className="text-gray-400 text-sm">No tasks assigned yet</p>
+//                   <p className="text-gray-300 text-xs mt-1">Create your first task using the form above</p>
+//                 </div>
+//               ) : (
+//                 <div className="space-y-3">
+//                   {existingTasks.map((task, index) => (
+//                     <div key={task._id} className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+//                       {/* Task header row */}
+//                       <div className="flex items-center gap-3 p-4">
+//                         <div className="w-7 h-7 bg-gray-100 rounded-lg flex items-center justify-center text-xs font-bold text-gray-400 shrink-0">
+//                           {String(index + 1).padStart(2, '0')}
+//                         </div>
+//                         <div className="flex-1 min-w-0">
+//                           <p className="text-sm font-semibold text-gray-800 truncate">{task.taskName}</p>
+//                           <div className="flex items-center gap-2 mt-1">
+//                             <StatusBadge status={task.status} />
+//                             <span className="text-xs text-gray-400 flex items-center gap-1">
+//                               <FaCalendarAlt className="w-2.5 h-2.5" />
+//                               {new Date(task.submissionDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+//                             </span>
+//                           </div>
+//                         </div>
+//                         <button
+//                           onClick={() => toggleExpand(task._id)}
+//                           className="bg-gray-50 border border-gray-200 text-gray-400 hover:text-gray-700 hover:bg-gray-100 p-2 rounded-lg transition-colors shrink-0"
+//                         >
+//                           <FaChevronDown
+//                             className="w-2.5 h-2.5 transition-transform duration-200"
+//                             style={{ transform: expandedTasks[task._id] ? 'rotate(180deg)' : 'rotate(0deg)' }}
+//                           />
+//                         </button>
+//                         <button
+//                           onClick={() => handleDeleteTask(task._id)}
+//                           className="bg-gray-50 border border-gray-200 text-gray-400 hover:text-red-500 hover:bg-red-50 hover:border-red-200 p-2 rounded-lg transition-colors shrink-0"
+//                         >
+//                           <FaTrash className="w-2.5 h-2.5" />
+//                         </button>
+//                       </div>
+
+//                       {/* Expandable details */}
+//                       {expandedTasks[task._id] && (
+//                         <div className="border-t border-gray-100 bg-gray-50 p-4 space-y-4">
+
+//                           {/* Update deadline */}
+//                           <div>
+//                             <label className="block text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2">Update Deadline</label>
+//                             <div className="flex gap-2">
+//                               <input
+//                                 type="date"
+//                                 value={taskDates[task._id] !== undefined ? taskDates[task._id] : (task.submissionDate ? new Date(task.submissionDate).toISOString().split('T')[0] : '')}
+//                                 min={today}
+//                                 onChange={e => handleDateChange(task._id, e.target.value)}
+//                                 className={`${inputBase} flex-1`}
+//                               />
+//                               <button
+//                                 onClick={() => handleAssignTask(task._id)}
+//                                 disabled={saving}
+//                                 className="px-4 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-1.5 whitespace-nowrap bg-blue-500 text-white hover:bg-blue-600 shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+//                               >
+//                                 <FaSave className="w-3 h-3" /> Update
+//                               </button>
+//                             </div>
+//                           </div>
+
+//                           {/* File submission */}
+//                           {task.submittedFileName && (
+//                             <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-sm">
+//                               <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2">Submission</p>
+//                               <div className="text-xs space-y-1 text-gray-500">
+//                                 <p>{task.submittedFileName}</p>
+//                                 <p>{new Date(task.submittedFile.submittedAt).toLocaleString()}</p>
+//                               </div>
+//                               <a
+//                                 href={`http://localhost:5000/${task.submittedFileName}`}
+//                                 target="_blank" rel="noopener noreferrer"
+//                                 className="inline-flex items-center gap-1.5 px-3 py-1.5 mt-2 rounded-lg text-xs font-medium bg-blue-50 text-blue-600 border border-blue-100 hover:bg-blue-100 transition-colors"
+//                               >
+//                                 <FaFileAlt className="w-2.5 h-2.5" /> Download
+//                               </a>
+//                             </div>
+//                           )}
+
+//                           {/* Remark + Review actions */}
+//                           <div>
+//                             <label className="block text-xs font-semibold uppercase tracking-widest text-gray-400 mb-2">Review Remark</label>
+//                             <textarea
+//                               rows={2}
+//                               className="w-full bg-white border border-gray-200 text-gray-700 placeholder-gray-400 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-50 transition-all resize-none shadow-sm"
+//                               placeholder="Add remark for this task..."
+//                               value={task._id in remarks ? remarks[task._id] : task.reviewRemark || ''}
+//                               onChange={e => handleRemarkChange(task._id, e.target.value)}
+//                             />
+//                             <div className="flex gap-2 mt-2">
+//                               <button
+//                                 onClick={() => handleReview(task, 'resubmit')}
+//                                 className="flex-1 py-2 rounded-xl text-xs font-semibold transition-colors bg-amber-50 border border-amber-200 text-amber-700 hover:bg-amber-100"
+//                               >
+//                                 Request Resubmit
+//                               </button>
+//                               <button
+//                                 onClick={() => handleReview(task, 'verify')}
+//                                 className="flex-1 py-2 rounded-xl text-xs font-semibold transition-colors bg-emerald-50 border border-emerald-200 text-emerald-700 hover:bg-emerald-100"
+//                               >
+//                                 Mark Verified
+//                               </button>
+//                             </div>
+//                           </div>
+//                         </div>
+//                       )}
+//                     </div>
+//                   ))}
+//                 </div>
+//               )}
+//             </div>
+//           </div>
+//         )}
+
+//         {/* Empty state when no group selected */}
+//         {!selectedGroupId && (
+//           <div className="bg-white border border-dashed border-gray-200 rounded-2xl p-16 text-center shadow-sm">
+//             <div className="bg-blue-50 border border-blue-100 w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4">
+//               <FaUsers className="text-blue-400 w-5 h-5" />
+//             </div>
+//             <p className="text-gray-500 text-sm font-medium">Select a group to get started</p>
+//             <p className="text-gray-300 text-xs mt-1">Choose from the dropdown above</p>
+//           </div>
+//         )}
+//       </div>
+//     </div>
+//   )
+// }
+
+// export default AddTask
+///////////////////////////////////////////////////////////////////////

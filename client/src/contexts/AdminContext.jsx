@@ -34,7 +34,7 @@ export const AdminProvider = ({ children }) => {
   const [tasks, setTasks] = useState([])
   const [profiles, setProfiles] = useState([])
   const [Studentprofiles, setStudentProfiles] = useState([])
-  const [reload, setReload] = useState(false)
+  // const [reload, setReload] = useState(false)
 
 
 
@@ -63,59 +63,173 @@ export const AdminProvider = ({ children }) => {
     setStudents([])
     setGuides([])
     setProjectGroups([])
+    setGuideProjectGroups([])
     setNotifications([])
     setTasks([])
-    setProfiles({})
+    setProfiles([])
+    setStudentProfiles([])
+    setDepartment("")
+    setStudentId(undefined)
   }
 
 
   const addDepartment = async (deptData) => {
     try {
-      const response = await axios.post(
-        "/addDepartment", // your backend endpoint
+      const res = await axios.post(
+        "/addDepartment",
         deptData,
-        {
-          withCredentials: true, // important for sending cookies
-        }
+        { withCredentials: true }
       );
 
-      if (response) {
-        setReload(true)
-      }
+      console.log("ADD RESPONSE:", res.data);
 
+      const newDepartment = res.data.department || res.data;
 
-      // Return the newly created department from server
-      return response.data.department;
+      setDepartments(prev => [...prev, newDepartment]);
+
+      return newDepartment;
 
     } catch (error) {
-      console.error("Add Department Error:", error.response?.data || error.message);
-      throw error; // rethrow so caller can handle it
+      console.error("Add error:", error);
     }
   };
 
   // Get Departments 
 
-  useEffect(() => {
-    const fetchDepartments = async () => {
-      try {
-        // setLoading(true);
-        const res = await axios.get("/getDepartment", {
-          withCredentials: true, // ✅ send cookies (JWT) with request
-        });
+  // useEffect(() => {
+  //   const fetchDepartments = async () => {
+  //     try {
+  //       // setLoading(true);
+  //       const res = await axios.get("/getDepartment", {
+  //         withCredentials: true, // ✅ send cookies (JWT) with request
+  //       });
 
 
 
-        setDepartments(res.data);
-      } catch (err) {
-        console.error("Error fetching departments:", err.response?.data || err.message);
-        // setError(err.response?.data?.message || "Failed to fetch departments");
-      } finally {
-        // setLoading(false);
+  //       setDepartments(res.data);
+  //     } catch (err) {
+  //       console.error("Error fetching departments:", err.response?.data || err.message);
+  //       // setError(err.response?.data?.message || "Failed to fetch departments");
+  //     } finally {
+  //       // setLoading(false);
+  //     }
+  //   };
+
+  //   fetchDepartments();
+  // }, [reload]);
+  const fetchDepartments = async () => {
+    try {
+      const res = await axios.get("/getDepartment", {
+        withCredentials: true,
+      });
+      setDepartments(res.data);
+    } catch (error) {
+      console.error("Fetch departments error:", error);
+    }
+  };
+
+  const fetchStudents = async () => {
+    try {
+      const response = await axios.get("/getStudents", {
+        withCredentials: true,
+      });
+      setStudents(response.data.data || []);
+      if (response.data.department) setDepartment(response.data.department);
+      if (response.data.studentId) setStudentId(response.data.studentId);
+    } catch (err) {
+      console.error("Fetch students error:", err);
+    }
+  };
+
+  const fetchGuides = async () => {
+    try {
+      const res = await axios.get("/getGuids", {
+        withCredentials: true,
+      });
+      const data = Array.isArray(res.data.data) ? res.data.data : [res.data.data];
+      setGuides(data);
+    } catch (err) {
+      console.error("Fetch guides error:", err);
+    }
+  };
+
+  const fetchGroups = async () => {
+    try {
+      const res = await axios.get("/getGroup", {
+        withCredentials: true,
+      });
+      if (res?.data?.data) {
+        setProjectGroups(res.data.data);
+        setNotifications(res.data.data);
       }
-    };
+    } catch (error) {
+      console.error("Fetch groups error:", error);
+    }
+  };
 
-    fetchDepartments();
-  }, [reload]);
+  const fetchGuideProjectGroups = async () => {
+    try {
+      const res = await axios.get("/getGuideAccetedGrp", {
+        withCredentials: true,
+      });
+      if (res?.data?.data) {
+        setGuideProjectGroups(res.data.data);
+      }
+    } catch (error) {
+      console.error("Fetch guide groups error:", error);
+    }
+  };
+
+  const fetchGuideProfile = async () => {
+    try {
+      const res = await axios.get("/getGuideProfile", {
+        withCredentials: true,
+      });
+      setProfiles(res.data.data);
+    } catch (error) {
+      console.error("Fetch guide profile error:", error);
+    }
+  };
+
+  const fetchTasks = async () => {
+    try {
+      const res = await axios.get("/getTask", {
+        withCredentials: true,
+      });
+      setTasks(res.data.data || []);
+    } catch (error) {
+      console.error("Fetch tasks error:", error);
+      setTasks([]);
+    }
+  };
+
+  const fetchStudentProfile = async () => {
+    try {
+      const res = await axios.get("/getSudentProfile", {
+        withCredentials: true,
+      });
+      setStudentProfiles(res.data.data || []);
+    } catch (error) {
+      console.error("Fetch student profile error:", error);
+    }
+  };
+
+  const refreshAllData = async () => {
+    await Promise.allSettled([
+      fetchDepartments(),
+      fetchStudents(),
+      fetchGuides(),
+      fetchGroups(),
+      fetchGuideProjectGroups(),
+      fetchGuideProfile(),
+      fetchStudentProfile(),
+      fetchTasks(),
+    ]);
+  };
+
+  useEffect(() => {
+    refreshAllData();
+  }, []);
 
 
   const updateDepartment = async (id, deptData) => {
@@ -128,9 +242,9 @@ export const AdminProvider = ({ children }) => {
         deptData,
         { withCredentials: true } // ✅ send JWT cookie
       );
-      if (res) {
-        setReload(true)
-      }
+      // if (res) {
+      //   setReload(true)
+      // }
 
       // 2️⃣ Update local state with response from backend
       setDepartments(prev =>
@@ -159,9 +273,9 @@ export const AdminProvider = ({ children }) => {
         withCredentials: true // ✅ send JWT cookie
       });
 
-      if (res) {
-        setReload(true)
-      }
+      // if (res) {
+      //   setReload(true)
+      // }
 
       // 3️⃣ Update local state
       setDepartments(prev => prev.filter(d => d._id !== id));
@@ -273,168 +387,6 @@ export const AdminProvider = ({ children }) => {
 
 
 
-  useEffect(() => {
-    const fetchStudent = async () => {
-      try {
-        const res = await axios.get("/getStudents", {
-          withCredentials: true, // 👈 important
-        });
-
-
-        console.log(res, "student");
-
-
-        setDepartment(res.data.department)
-        setStudentId(res.data.studentId)
-        setStudents(res.data.data);
-
-
-      } catch (error) {
-        console.error("Error fetching students:", error);
-      }
-    };
-
-    fetchStudent();
-  }, []);
-
-
-  // Fetch Guid Form backend
-
-  useEffect(() => {
-    const fetchGuides = async () => {
-      try {
-        const res = await axios.get("/getGuids", {
-          withCredentials: true, // 👈 important for cookies/session
-        });
-
-        // console.log(res.data.data, "Guid res");
-
-        setGuides(res.data.data);
-      } catch (err) {
-        console.error(err);
-        setError("Failed to fetch guides");
-      }
-    };
-
-    fetchGuides();
-  }, []);
-
-
-  // Fetch Student From Backend
-
-  useEffect(() => {
-    const fetchStudents = async () => {
-      try {
-        // setLoading(true);
-        // setError("");
-
-        const response = await axios.get("/getStudents", {
-          withCredentials: true, // ✅ send cookies/session
-        });
-
-        setStudents(response.data.data || []);
-      } catch (err) {
-        console.error(err);
-        setError(err.response?.data?.message || "Failed to fetch students");
-      } finally {
-        // setLoading(false);
-      }
-    };
-
-    fetchStudents();
-  }, []);
-
-
-  //Fetch project Groups From backend
-
-  useEffect(() => {
-    const fetchGroup = async () => {
-      try {
-        const res = await axios.get("/getGroup", {
-          withCredentials: true   // ✅ send cookies/session
-        });
-
-        console.log(res, "group res");
-
-        if (res?.data) {
-          setProjectGroups(res.data?.data);
-          setNotifications(res.data?.data)
-        }
-      } catch (error) {
-        console.error("Error fetching groups:", error);
-      }
-    };
-
-    fetchGroup(); // ✅ IMPORTANT: call the function
-  }, []);
-
-
-  useEffect(() => {
-    const fetchGuideGroup = async () => {
-      try {
-        const res = await axios.get("/getGuideAccetedGrp", {
-          withCredentials: true   // ✅ send cookies/session
-        });
-
-        // console.log(res, "group res");
-
-        if (res?.data) {
-          setGuideProjectGroups(res.data?.data);
-          // setNotifications(res.data?.data)
-        }
-      } catch (error) {
-        console.error("Error fetching groups:", error);
-      }
-    };
-
-    fetchGuideGroup(); // ✅ IMPORTANT: call the function
-  }, []);
-
-
-  // Get Guide Profile 
-
-  useEffect(() => {
-    const fetchGuideProfile = async () => {
-      try {
-        const res = await axios.get(
-          "/getGuideProfile",
-          {
-            withCredentials: true, // ✅ VERY IMPORTANT for JWT cookies
-          }
-        );
-        // console.log(res,"guide profile");
-
-
-        setProfiles(res.data.data);
-      } catch (error) {
-        console.error("Error fetching guide profile:", error);
-      }
-    };
-
-    fetchGuideProfile();
-  }, []);
-
-
-  useEffect(() => {
-    const fetchStudentProfile = async () => {
-      try {
-        const res = await axios.get(
-          "/getSudentProfile",
-          {
-            withCredentials: true, // ✅ VERY IMPORTANT for JWT cookies
-          }
-        );
-        // console.log(res,"student profile");
-
-
-        setStudentProfiles(res.data.data);
-      } catch (error) {
-        console.error("Error fetching guide profile:", error);
-      }
-    };
-
-    fetchStudentProfile()
-  }, []);
 
 
   const importStudentsFromCSV = (csvData) => {
@@ -487,25 +439,6 @@ export const AdminProvider = ({ children }) => {
   };
 
 
-  useEffect(() => {
-    const fetchGuid = async () => {
-      try {
-        const res = await axios.get("/getGuids", {
-          withCredentials: true, // 👈 send cookies/session
-        });
-
-
-
-        setGuides(Array.isArray(res.data.data) ? res.data.data : [res.data.data]);
-
-
-      } catch (error) {
-        console.error("Fetch Guides Error:", error.response?.data || error.message);
-      }
-    };
-
-    fetchGuid();
-  }, []);
 
   const updateGuide = async (id, guideData) => {
     try {
@@ -753,6 +686,26 @@ export const AdminProvider = ({ children }) => {
     }
   };
 
+  const editTask = async (id, taskData) => {
+    try {
+      const res = await axios.put(
+        `/editTask/${id}`,
+        taskData,
+        { withCredentials: true }
+      );
+
+      if (res.data.success) {
+        setTasks(prev =>
+          prev.map(t => (t._id === id ? { ...t, ...res.data.data } : t))
+        );
+      }
+      return res.data;
+    } catch (error) {
+      console.error("Edit Task Error:", error.response?.data || error.message);
+      throw error;
+    }
+  };
+
   const deleteTask = (id) => {
     setTasks(prev => prev.filter(t => t.id !== id))
   }
@@ -776,48 +729,66 @@ export const AdminProvider = ({ children }) => {
   };
 
 
-  useEffect(() => {
-    const fetchTasks = async () => {
-      try {
-        const res = await axios.get("/getTask", {
-          withCredentials: true,
-        });
+  // const submitTaskFile = async (taskId, file) => {
+  //   try {
+  //     console.log(file, "file");
 
-        console.log(res, "task");
+  //     if (!file) throw new Error("No file selected");
 
-        setTasks(res.data.data);
+  //     // Create FormData
+  //     const formData = new FormData();
+  //     formData.append("file", file); // append the file
+  //     formData.append("fileName", file.fileName); // optional, if you want to store fileName separately
 
-      } catch (error) {
-        console.error("Error fetching tasks:", error);
-        setTasks([]);
-      }
-    };
+  //     const res = await axios.put(
+  //       `/submitTaskFile/${taskId}`,
+  //       formData,
+  //       {
+  //         headers: {
+  //           "Content-Type": "multipart/form-data",
+  //         },
+  //         withCredentials: true,
+  //       }
+  //     );
 
-    fetchTasks();
-  }, []);
+  //     console.log("Upload Success:", res.data);
+  //     return res.data;
+
+  //   } catch (error) {
+  //     console.error("File Upload Error:", error);
+  //     throw error;
+  //   }
+  // };
+
+
   const submitTaskFile = async (taskId, file) => {
     try {
-      console.log(file, "file");
-
       if (!file) throw new Error("No file selected");
 
-      // Create FormData
       const formData = new FormData();
-      formData.append("file", file); // append the file
-      formData.append("fileName", file.fileName); // optional, if you want to store fileName separately
+      formData.append("file", file);
+      // formData.append("fileName", file.name);  // optional
 
       const res = await axios.put(
         `/submitTaskFile/${taskId}`,
         formData,
         {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
+          headers: { "Content-Type": "multipart/form-data" },
           withCredentials: true,
         }
       );
 
       console.log("Upload Success:", res.data);
+
+      // ── IMPORTANT: Update the tasks array in context ────────
+      setTasks(prevTasks =>
+        prevTasks.map(t =>
+          t._id === taskId
+            ? { ...t, ...res.data.data }
+            : t
+        )
+      );
+
       return res.data;
 
     } catch (error) {
@@ -881,6 +852,9 @@ export const AdminProvider = ({ children }) => {
       );
 
       console.log("Profile updated:", res.data);
+      if (res.data.success) {
+        setProfiles(res.data.data);
+      }
 
       return res.data;
 
@@ -969,6 +943,7 @@ export const AdminProvider = ({ children }) => {
     acceptGroupNotification,
     addTask,
     updateTask,
+    editTask,
     deleteTask,
     getTasksByGroup,
     submitTaskFile,
@@ -976,7 +951,8 @@ export const AdminProvider = ({ children }) => {
     updateProfile,
     updateStudentProfile,
     // getProfile,
-    clearAllData
+    clearAllData,
+    refreshAllData
   }
 
   return <AdminContext.Provider value={value}>{children}</AdminContext.Provider>

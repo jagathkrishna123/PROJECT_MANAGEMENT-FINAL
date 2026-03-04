@@ -189,8 +189,8 @@ export const submitTaskFile = async (req, res) => {
     const updatedTask = await Task.findByIdAndUpdate(
       taskId,
       {
-        submittedFileName: `uploads/${file.filename}`, // optional: original name
-        submittedFilePath: `uploads/${file.filename}`, // store the relative path
+        submittedFileName: file.originalname, // use original name from user
+        submittedFilePath: `uploads/${file.filename}`, // store the relative path for serving
         submittedFileType: file.mimetype,
         status: "Submitted",
       },
@@ -345,6 +345,35 @@ export const publishFinalMarks = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Error publishing final mark",
+      error: error.message,
+    });
+  }
+};
+
+export const editTask = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+
+    const task = await Task.findByIdAndUpdate(id, updates, { new: true });
+
+    if (!task) {
+      return res.status(404).json({
+        success: false,
+        message: "Task not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Task updated successfully",
+      data: task,
+    });
+  } catch (error) {
+    console.error("Update Task Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error updating task",
       error: error.message,
     });
   }

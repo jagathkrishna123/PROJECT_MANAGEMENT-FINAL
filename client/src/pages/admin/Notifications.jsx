@@ -31,7 +31,7 @@ const Notifications = () => {
   // console.log(notificationType, "tyo");
   // console.log(selectedRecipients, "Slele");
 
-console.log(teacherId,"teacher Id 12");
+  console.log(teacherId, "teacher Id 12");
 
 
 
@@ -64,10 +64,11 @@ console.log(teacherId,"teacher Id 12");
 
 
   // Combine notifications from both contexts
-  const notifications = [...Notifications].sort((a, b) => b.timestamp - a.timestamp)
-    
-    
-  // console.log(notifications, "norrr"); 
+  const notifications = [...Notifications].sort((a, b) => {
+    const timeA = new Date(a.createdAt || a.timestamp || 0).getTime();
+    const timeB = new Date(b.createdAt || b.timestamp || 0).getTime();
+    return timeB - timeA;
+  });
 
 
   const handleNotificationTypeChange = (type) => {
@@ -160,8 +161,11 @@ console.log(teacherId,"teacher Id 12");
   }
 
   const formatTimestamp = (timestamp) => {
-    const now = new Date()
-    const diff = now - timestamp
+    if (!timestamp) return 'Unknown';
+    const date = new Date(timestamp);
+    if (isNaN(date.getTime())) return 'Unknown';
+    const now = new Date();
+    const diff = now - date;
     const minutes = Math.floor(diff / (1000 * 60))
     const hours = Math.floor(diff / (1000 * 60 * 60))
     const days = Math.floor(diff / (1000 * 60 * 60 * 24))
@@ -227,7 +231,7 @@ console.log(teacherId,"teacher Id 12");
                 </label>
                 <div className="max-h-48 overflow-y-auto border border-slate-200 rounded-xl p-3 bg-white">
                   {getRecipientsList().map((recipient) => (
-                    <label key={recipient.id} className="flex items-center space-x-3 p-2 hover:bg-slate-50 rounded-lg cursor-pointer">
+                    <label key={recipient._id} className="flex items-center space-x-3 p-2 hover:bg-slate-50 rounded-lg cursor-pointer">
                       <input
                         type="checkbox"
                         checked={selectedRecipients.some(item => item._id === recipient._id)}
@@ -317,16 +321,16 @@ console.log(teacherId,"teacher Id 12");
                   <div className="flex-1">
                     <div className="flex items-center space-x-3 mb-2">
                       <h3 className="text-lg font-semibold text-slate-900">{notification.title}</h3>
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${notification?.type.includes('teachers')
+                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${(notification?.type || '').includes('teachers')
                         ? 'bg-purple-100 text-purple-700'
                         : 'bg-green-100 text-green-700'
                         }`}>
-                        {notification.recipients}
-                      </span> 
+                        {notification.type || 'General'}
+                      </span>
                     </div>
                     <p className="text-slate-600 mb-3">{notification.message}</p>
                     <p className="text-sm text-slate-500">
-                      {new Date(notification.updatedAt).toLocaleDateString()}
+                      {formatTimestamp(notification.updatedAt || notification.createdAt || notification.timestamp)}
                     </p>
 
                   </div>

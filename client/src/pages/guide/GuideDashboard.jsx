@@ -39,52 +39,32 @@ const GuideDashboard = () => {
 
 
   useEffect(() => {
-    // Get current guide from localStorage
     const userData = localStorage.getItem('user')
 
-    console.log(projectGroups,"prooooo");
-    console.log(currentGuide,"cu");
-    
-    console.log(guides,"hus");
-    
-
-    if (userData && guides) {
+    if (userData && guides.length > 0) {
       try {
-
-
         const user = JSON.parse(userData)
-        // console.log(user,"user");
-        // console.log(guides,"giuss");
+        const guide = guides.find(g => g.email === user.email || g._id === user._id)
 
-
-        // const guide = guides.find(g => g.email === user.email && g.name === user.name)
-
-        // console.log(guide,"gu");
-
-        if (guides) {
-          guides.map((item) => {
-            if (item) {
-              setCurrentGuide(item)
-            }
-          })
-
+        if (guide) {
+          setCurrentGuide(guide)
 
           // Get projects assigned to this guide
           const projects = projectGroups.filter(group =>
-            group.assignedGuide === guides._id && group.status === 'Accepted'
+            (group.teacherId === guide._id || group.assignedGuide === guide._id) && group.status === 'Accepted'
           )
           setGuideProjects(projects)
 
           // Get all tasks from guide's projects
           const projectTasks = tasks.filter(task =>
-            projects.some(project => project.id === task.groupId)
+            projects.some(project => project._id === task.groupId)
           )
           setGuideTasks(projectTasks)
 
           // Get all students from guide's projects
           const projectStudents = students.filter(student =>
             projects.some(project =>
-              project.members && project.members.some(member => member.email === student.email)
+              project.selectedMembers && project.selectedMembers.some(member => member._id === student._id)
             )
           )
           setGuideStudents(projectStudents)
@@ -94,66 +74,21 @@ const GuideDashboard = () => {
             totalProjects: projects.length,
             totalStudents: projectStudents.length,
             totalTasks: projectTasks.length,
-            completedTasks: projectTasks.filter(t => t.status === 'Completed').length,
+            completedTasks: projectTasks.filter(t => t.status === 'Completed' || t.status === 'Verified').length,
             pendingTasks: projectTasks.filter(t => t.status === 'Pending').length,
             inProgressTasks: projectTasks.filter(t => t.status === 'In Progress').length,
-            unreadNotifications: Notifications.filter(n => !n.read).length
-          }
-          setStats(guideStats)
-
-        } else if (guides.length > 0) {
-          // Demo mode - show first guide's data
-          const demoGuide = guides[0]
-          setCurrentGuide(demoGuide)
-
-          const projects = projectGroups.filter(group =>
-            group.assignedGuide === demoGuide.id && group.status === 'Accepted'
-          )
-          setGuideProjects(projects)
-
-          const projectTasks = tasks.filter(task =>
-            projects.some(project => project.id === task.groupId)
-          )
-          setGuideTasks(projectTasks)
-
-          const projectStudents = students.filter(student =>
-            projects.some(project =>
-              project.members && project.members.some(member => member.email === student.email)
-            )
-          )
-          setGuideStudents(projectStudents)
-
-          const guideStats = {
-            totalProjects: projects.length,
-            totalStudents: projectStudents.length,
-            totalTasks: projectTasks.length,
-            completedTasks: projectTasks.filter(t => t.status === 'Completed').length,
-            pendingTasks: projectTasks.filter(t => t.status === 'Pending').length,
-            inProgressTasks: projectTasks.filter(t => t.status === 'In Progress').length,
-            unreadNotifications: Notifications.filter(n => !n.read).length
+            unreadNotifications: (Notifications || []).filter(n => n && !n.read).length
           }
           setStats(guideStats)
         }
       } catch (error) {
         console.error('Error parsing user data:', error)
-        // Demo mode fallback
-        if (guides.length > 0) {
-          const demoGuide = guides[0]
-          setCurrentGuide(demoGuide)
-          const projects = projectGroups.filter(group =>
-            group.assignedGuide === demoGuide.id && group.status === 'Accepted'
-          )
-          setGuideProjects(projects)
-        }
       }
     }
 
-    console.log(currentGuide, "guids");
-
-
-    // Get recent notifications for guides
-    const recent = Notifications
-      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+    // Get recent notifications for guides (last 3)
+    const recent = [...(Notifications || [])]
+      .sort((a, b) => new Date(b.createdAt || b.timestamp) - new Date(a.createdAt || a.timestamp))
       .slice(0, 3)
     setRecentNotifications(recent)
   }, [guides, projectGroups, tasks, students, Notifications])
@@ -322,19 +257,19 @@ const GuideDashboard = () => {
               </div>
             ) : (
               guideProjects.map((project) => {
-                const projectTasks = guideTasks.filter(task => task.groupId === project.id)
-                const completedTasks = projectTasks.filter(task => task.status === 'Completed').length
+                const projectTasks = guideTasks.filter(task => task.groupId === project._id)
+                const completedTasks = projectTasks.filter(task => task.status === 'Completed' || task.status === 'Verified').length
                 const totalTasks = projectTasks.length
                 const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
 
                 return (
-                  <div key={project.id} className="border border-slate-200 rounded-xl p-6 hover:shadow-md transition-shadow">
+                  <div key={project._id} className="border border-slate-200 rounded-xl p-6 hover:shadow-md transition-shadow">
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="font-semibold text-slate-900">{project.name}</h3>
+                      <h3 className="font-semibold text-slate-900">{project.groupName || project.name}</h3>
                       <div className="flex items-center space-x-2">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${completionRate === 100 ? 'bg-green-100 text-green-700' :
-                            completionRate > 50 ? 'bg-yellow-100 text-yellow-700' :
-                              'bg-red-100 text-red-700'
+                          completionRate > 50 ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-red-100 text-red-700'
                           }`}>
                           {completionRate}% Complete
                         </span>
@@ -343,7 +278,7 @@ const GuideDashboard = () => {
 
                     <div className="grid grid-cols-2 gap-4 mb-4">
                       <div className="text-center p-3 bg-slate-50 rounded-lg">
-                        <p className="text-lg font-semibold text-slate-900">{project.members?.length || 0}</p>
+                        <p className="text-lg font-semibold text-slate-900">{project.selectedMembers?.length || 0}</p>
                         <p className="text-xs text-slate-500">Students</p>
                       </div>
                       <div className="text-center p-3 bg-slate-50 rounded-lg">
@@ -395,7 +330,7 @@ const GuideDashboard = () => {
             ) : (
               recentNotifications.map((notification) => (
                 <div
-                  key={notification.id}
+                  key={notification._id}
                   className={`p-4 rounded-lg border ${notification.read ? 'bg-slate-50 border-slate-200' : 'bg-blue-50 border-blue-200'
                     }`}
                 >
@@ -414,11 +349,11 @@ const GuideDashboard = () => {
                       )}
                       <div className="flex items-center justify-between mt-2">
                         <p className="text-xs text-slate-500">
-                          {new Date(notification.timestamp).toLocaleDateString()} • {notification.sender}
+                          {new Date(notification.createdAt || notification.timestamp).toLocaleDateString()} • {notification.sender || 'System'}
                         </p>
                         <span className={`text-xs px-2 py-1 rounded-full ${notification.priority === 'high' ? 'bg-red-100 text-red-700' :
-                            notification.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                              'bg-slate-100 text-slate-700'
+                          notification.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-slate-100 text-slate-700'
                           }`}>
                           {notification.priority || 'normal'}
                         </span>
@@ -500,13 +435,13 @@ const GuideDashboard = () => {
                   .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
                   .slice(0, 5)
                   .map((task) => {
-                    const project = guideProjects.find(p => p.id === task.groupId)
+                    const project = guideProjects.find(p => p._id === task.groupId)
                     return (
-                      <div key={task.id} className="flex items-center justify-between p-3 border border-slate-200 rounded-lg">
+                      <div key={task._id} className="flex items-center justify-between p-3 border border-slate-200 rounded-lg">
                         <div className="flex-1">
                           <p className="font-medium text-slate-900 text-sm">{task.title}</p>
                           <p className="text-xs text-slate-500">
-                            {project?.name || 'Unknown Project'} • {formatDate(task.createdAt)}
+                            {project?.groupName || project?.name || 'Unknown Project'} • {formatDate(task.createdAt)}
                           </p>
                         </div>
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${getTaskStatusColor(task.status)}`}>

@@ -25,8 +25,8 @@ export const createGroup = async (req, res) => {
 
     // console.log(req.body, "body");
 
-    console.log(incomingMembers,"memn");
-    
+    console.log(incomingMembers, "memn");
+
 
     // 1️⃣ Basic validation
     if (!groupName || !topicName || !incomingMembers?.length) {
@@ -62,7 +62,7 @@ export const createGroup = async (req, res) => {
       .map(m => ({
         _id: m._id || m.id,
         name: m.name,
-        email:m.email
+        email: m.email
       }))
       .filter(m => m._id); // remove invalid
 
@@ -123,11 +123,13 @@ export const GetGroups = async (req, res) => {
     const { role, department, id } = req.user.id;
 
     let data = [];
+    console.log(department, "dep");
 
-    // 👨‍🎓 STUDENT → groups where student is member
+
+    // 👨‍🎓 STUDENT → groups in their department (to see who is available)
     if (role === "Student") {
       data = await Group.find({
-        "selectedMembers._id": id
+        department: department
       });
     }
 
@@ -135,7 +137,6 @@ export const GetGroups = async (req, res) => {
     else if (role === "Guide") {
       data = await Group.find({
         department: department,
-        teacherId: id,
         rejectedTeachers: { $ne: id }
       });
     }
@@ -144,6 +145,8 @@ export const GetGroups = async (req, res) => {
     else if (role === "Admin" || role === "admin") {
       data = await Group.find();
     }
+
+    console.log(data, "data");
 
     return res.status(200).json({
       success: true,
@@ -235,6 +238,7 @@ export const assignGroup = async (req, res) => {
     const groupId = notificationId
 
     const guide = await Guide.findById(guideId);
+    console.log(guide, "guide");  
 
     // ✅ Validation
     if (!groupId || !guideId) {

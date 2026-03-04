@@ -55,6 +55,27 @@ const guideSchema = new mongoose.Schema(
       default: null,
     },
 
+    dob: {
+      type: String,
+      default: "",
+    },
+    phone: {
+      type: String,
+      default: "",
+    },
+    place: {
+      type: String,
+      default: "",
+    },
+    address: {
+      type: String,
+      default: "",
+    },
+    teacherId: {
+      type: String,
+      default: "",
+    },
+
     notificationId: {
       type: [mongoose.Schema.Types.ObjectId],
       ref: "Notification",

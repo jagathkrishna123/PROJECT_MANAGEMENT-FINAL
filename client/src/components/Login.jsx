@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAdmin } from '../contexts/AdminContext'
+import { useNotifications } from '../contexts/NotificationContext'
 import axios from "axios"
 
 const Login = () => {
@@ -12,7 +13,8 @@ const Login = () => {
   const [loading, setLoading] = useState(false)
 
   const navigate = useNavigate()
-  const { students, guides } = useAdmin()
+  const { students, guides, refreshAllData, clearAllData } = useAdmin()
+  const { clearNotifications, refreshNotifications } = useNotifications()
 
   const handleChange = (e) => {
     setFormData({
@@ -28,6 +30,10 @@ const Login = () => {
     setError("");
 
     try {
+      // ✅ Clear state before login attempt to avoid stale data
+      clearAllData();
+      clearNotifications();
+
       const response = await axios.post(
         "/login",
         {
@@ -49,8 +55,14 @@ const Login = () => {
         name: user.name,
         email: user.email,
         role: user.role,
-        department :user.department
+        department: user.department
       }));
+
+      // ✅ Refresh context data before navigating to populate state immediately
+      await Promise.all([
+        refreshAllData(),
+        refreshNotifications()
+      ]);
 
       // ✅ Role based navigation
       if (user.role === "admin") {
@@ -158,7 +170,6 @@ const Login = () => {
         <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
           <h3 className="text-sm font-medium text-blue-900 mb-2">Login Instructions:</h3>
           <ul className="text-sm text-blue-800 space-y-1">
-            <li>• <strong>Admin:</strong> Use username "admin" and email "admin@university.edu"</li>
             <li>• <strong>Students:</strong> Use credentials provided by your institution</li>
             <li>• <strong>Guides:</strong> Use credentials provided by your institution</li>
             <li>• Admins access the admin dashboard, students and guides access their respective dashboards</li>

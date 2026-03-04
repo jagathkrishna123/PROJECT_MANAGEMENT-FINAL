@@ -67,7 +67,7 @@ const AcademicSetup = () => {
 
             <div className="grid gap-4">
               {departments.map(dept => (
-                <div key={dept.id} className="border border-gray-200 rounded-lg p-4">
+                <div key={dept._id} className="border border-gray-200 rounded-lg p-4">
                   <div className="flex justify-between items-start">
                     <div>
                       <h3 className="text-lg font-medium text-gray-900">{dept.name}</h3>

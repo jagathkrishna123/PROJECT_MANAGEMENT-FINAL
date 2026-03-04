@@ -354,12 +354,21 @@ const GuideProfile = () => {
       setCurrentUser(profiles)
 
       setImagePreview(
-    profiles.profileImage
-      ? `http://localhost:5000/uploads/${profiles.profileImage}`
-      : ""
-  );
-    
-      
+        profiles.profileImage
+          ? `http://localhost:5000/uploads/${profiles.profileImage}`
+          : ""
+      );
+
+      setProfileData({
+        dob: profiles.dob || "",
+        phone: profiles.phone || "",
+        place: profiles.place || "",
+        address: profiles.address || "",
+        teacherId: profiles.teacherId || "",
+        profileImage: profiles.profileImage || ""
+      });
+
+
 
       // Load existing profile data
       // const existingProfile = getProfile(user.id)
@@ -380,7 +389,7 @@ const GuideProfile = () => {
       console.error('User parse error:', err)
     }
   }, [profiles])
-     console.log(imagePreview,"image");
+  console.log(imagePreview, "image");
 
   const handleInputChange = (e) => {
     const { name, value } = e.target

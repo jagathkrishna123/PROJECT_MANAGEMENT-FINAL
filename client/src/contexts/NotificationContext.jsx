@@ -46,29 +46,31 @@ export const NotificationProvider = ({ children }) => {
 
   // fetch notifications
 
+  const fetchNotifications = async () => {
+    try {
+      const response = await axios.get(
+        "/getNotification",
+        {
+          withCredentials: true
+        }
+      );
+      setNotifications(response.data.data || [])
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+    }
+  };
+
   useEffect(() => {
-    const fetchNotifications = async () => {
-      try {
-        const response = await axios.get(
-          "/getNotification",
-          {
-            withCredentials: true
-          }
-        );
-
-        console.log(response, "res222");
-
-
-        setNotifications(response.data.data)
-        // setStudentNotifications(response.data.data);
-        // setTeacherNotifications(response.data.data)
-      } catch (error) {
-        console.error("Error fetching notifications:", error);
-      }
-    };
-
     fetchNotifications();
   }, []);
+
+  const clearNotifications = () => {
+    setNotifications([])
+  }
+
+  const refreshNotifications = () => {
+    fetchNotifications()
+  }
 
   // Save to storage when state changes
   // useEffect(() => {
@@ -308,7 +310,7 @@ export const NotificationProvider = ({ children }) => {
       const res = await axios.post(
         "/createNotificationByTeacher",
         {
-         studentIds: [studentId],
+          studentIds: [studentId],
           message,
         },
         {
@@ -344,7 +346,9 @@ export const NotificationProvider = ({ children }) => {
     // markStudentNotificationAsRead,
     markAllTeacherNotificationsAsRead,
     // markAllStudentNotificationsAsRead,
-    sendGuideMessageToStudent
+    sendGuideMessageToStudent,
+    clearNotifications,
+    refreshNotifications
   }
 
   return (

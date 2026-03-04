@@ -1,237 +1,164 @@
+
+
+
+
 import React, { useState, useEffect } from 'react'
-import { FaCalendarAlt, FaTasks, FaSave, FaPlus, FaTrash, FaFlagCheckered, FaCheckCircle } from 'react-icons/fa'
+import { FaCalendarAlt, FaTasks, FaSave, FaPlus, FaTrash, FaFlagCheckered, FaCheckCircle, FaChevronDown, FaClock, FaFileAlt, FaUsers, FaMedal } from 'react-icons/fa'
 import { useAdmin } from '../../contexts/AdminContext'
 import axios from 'axios'
-const AddTask = () => {
-  const { projectGroups, tasks, addTask, updateTask, getTasksByGroup, reviewTask } = useAdmin()
 
-  const [currentUser, setCurrentUser] = useState(null)
+const StatusBadge = ({ status }) => {
+  const config = {
+    Verified: 'bg-emerald-100 text-emerald-900 border border-emerald-400',
+    Submitted: 'bg-blue-100 text-blue-900 border border-blue-400',
+    'Needs Resubmit': 'bg-amber-100 text-amber-900 border border-amber-400',
+    Pending: 'bg-gray-200 text-gray-700 border border-gray-400',
+  }
+  const dot = {
+    Verified: 'bg-emerald-600',
+    Submitted: 'bg-blue-600',
+    'Needs Resubmit': 'bg-amber-600',
+    Pending: 'bg-gray-500',
+  }
+  const cls = config[status] || config.Pending
+  const d = dot[status] || dot.Pending
+  return (
+    <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold ${cls}`}>
+      <span className={`w-2 h-2 rounded-full ${d}`} />
+      {status}
+    </span>
+  )
+}
+
+
+
+const SectionHeader = ({ icon: Icon, title, subtitle, iconClass, iconBgClass }) => (
+  <div className="flex items-start gap-3 mb-5">
+    <div className={`p-2.5 rounded-xl mt-0.5 shrink-0 ${iconBgClass}`}>
+      <Icon className={`w-4 h-4 ${iconClass}`} />
+    </div>
+    <div>
+      <h2 className="text-base font-bold text-gray-900 tracking-tight">{title}</h2>
+      {subtitle && <p className="text-sm text-gray-600 mt-0.5">{subtitle}</p>}
+    </div>
+  </div>
+)
+
+const AddTask = () => {
+  const { GuideprojectGroups, tasks, addTask, editTask, updateTask, reviewTask } = useAdmin()
+
   const [supervisedGroups, setSupervisedGroups] = useState([])
   const [selectedGroupId, setSelectedGroupId] = useState(null)
   const [existingTasks, setExistingTasks] = useState([])
   const [taskDates, setTaskDates] = useState({})
   const [saving, setSaving] = useState(false)
   const [remarks, setRemarks] = useState({})
-  // console.log(existingTasks, "existig");
-
-  // New states for dynamic task creation
   const [newTaskName, setNewTaskName] = useState('')
   const [newTaskDeadline, setNewTaskDeadline] = useState('')
-  // Final report states
   const [finalReportDeadline, setFinalReportDeadline] = useState('')
-  const [finalMarks, setFinalMarks] = useState({}) // { groupId: mark }
+  const [finalMarks, setFinalMarks] = useState({})
   const [finalReportTask, setFinalReportTask] = useState(null)
-
-
-  /* ===============================
-     Load guide + assigned groups
-  =============================== */
-
-
-  // const downloadFile = async (filePath, fileName) => {
-  //   try {
-  //     const response = await fetch(`http://localhost:5000/${filePath}`);
-
-  //     const blob = await response.blob();
-
-  //     const url = window.URL.createObjectURL(blob);
-
-  //     const a = document.createElement("a");
-  //     a.href = url;
-  //     a.download = fileName; // force download name
-
-  //     document.body.appendChild(a);
-  //     a.click();
-
-  //     a.remove();
-  //     window.URL.revokeObjectURL(url);
-  //   } catch (err) {
-  //     console.error("Download failed:", err);
-  //   }
-  // };
+  const [expandedTasks, setExpandedTasks] = useState({})
 
   useEffect(() => {
-    // const userData = localStorage.getItem('user')
-    // if (!userData) return
-
     try {
-      // const user = JSON.parse(userData)
-      // if (user.role !== 'guide') return
-
-      // setCurrentUser(user)
-
-      const assigned = projectGroups.filter(
-        g => g.status === 'Accepted'
-      )
-
-
-
-
+      const assigned = GuideprojectGroups.filter(g => g.status === 'Accepted')
       setSupervisedGroups(assigned)
-
-      // Ensure selectedGroupId is always valid
       if (assigned.length === 0) {
         setSelectedGroupId(null)
       } else if (selectedGroupId === null || !assigned.some(g => g._id === selectedGroupId)) {
-        // If nothing is selected, or selected group is no longer valid, default to the first
         setSelectedGroupId(assigned.length > 0 ? assigned[0]._id : null)
       }
     } catch (err) {
       console.error('User parse error:', err)
     }
-  }, [projectGroups, selectedGroupId])
-  console.log(supervisedGroups, "super");
-
-  /* ===============================
-     Sync tasks when group changes
-  =============================== */
+  }, [GuideprojectGroups, selectedGroupId])
   useEffect(() => {
-    const fetchGroupTasks = async () => {
-      try {
-        // if (!groupId) {
-        //   setExistingTasks([]);
-        //   setTaskDates({});
-        //   setFinalReportTask(null);
-        //   return;
-        // }
+    console.log("======= TASKS DEBUG =======")
 
-        const groupTasks = await getTasksByGroup();
+    console.log("tasks:", tasks)
 
-        console.log(groupTasks, "group Task");
+    if (!tasks) {
+      console.log("tasks is undefined ❌")
+      return
+    }
 
-        // Separate final report from regular tasks
-        const finalTask = groupTasks.find(
-          (t) => t.taskName === "Final Report Submission"
-        );
+    if (tasks.length === 0) {
+      console.log("tasks is empty ⚠️")
+      return
+    }
 
+    tasks.forEach((t, index) => {
+      console.log(`Task ${index + 1}:`, t)
+      console.log("submissionDate:", t.submissionDate)
 
-        const regularTasks = groupTasks.filter(
-          (t) => t.taskName !== "Final Report Submission"
-        );
+      const d = new Date(t.submissionDate)
+      console.log("Parsed:", d)
+      console.log("Valid?:", !isNaN(d.getTime()))
+    })
 
-        setFinalReportTask(finalTask || null);
-        setExistingTasks(regularTasks);
+    console.log("======= END DEBUG =======")
+  }, [tasks])
 
-
-
-        const dates = {};
-        regularTasks.forEach((task) => {
-          dates[task.taskName] = task.submissionDate;
-        });
-
-        setTaskDates(dates);
-
-        if (finalTask) {
-          setFinalReportDeadline(finalTask.submissionDate);
-        }
-      } catch (error) {
-        console.error("Error fetching tasks:", error);
-      }
-    };
-    fetchGroupTasks()
-
-  }, [])
-
-  /* ===============================
-     Handlers
-  =============================== */
-  const handleDateChange = (taskName, date) => {
-    setTaskDates(prev => ({
-      ...prev,
-      [taskName]: date
-    }))
-  }
-
-  const handleRemarkChange = (taskId, value) => {
-    setRemarks(prev => ({
-      ...prev,
-      [taskId]: value
-    }))
-  }
-
-  const handleAssignTask = (taskName) => {
+  useEffect(() => {
     if (!selectedGroupId) {
-      alert('Please select a group')
+      setExistingTasks([])
+      setTaskDates({})
+      setFinalReportTask(null)
       return
     }
-
-    const submissionDate = taskDates[taskName]
-    if (!submissionDate) {
-      alert('Please select a submission date')
-      return
+    const groupTasks = tasks.filter(t => t.groupId === selectedGroupId)
+    const finalTask = groupTasks.find(t => t.taskName === 'Final Report Submission')
+    const regularTasks = groupTasks.filter(t => t.taskName !== 'Final Report Submission')
+    setFinalReportTask(finalTask || null)
+    setExistingTasks(regularTasks)
+    const dates = {}
+    regularTasks.forEach(task => {
+      dates[task._id] = task.submissionDate ? new Date(task.submissionDate).toISOString().split('T')[0] : ''
+    })
+    setTaskDates(dates)
+    if (finalTask) {
+      setFinalReportDeadline(new Date(finalTask.submissionDate).toISOString().split('T')[0])
     }
+  }, [selectedGroupId, tasks])
 
+  const handleDateChange = (taskId, date) => setTaskDates(prev => ({ ...prev, [taskId]: date }))
+  const handleRemarkChange = (taskId, value) => setRemarks(prev => ({ ...prev, [taskId]: value }))
+  const toggleExpand = (taskId) => setExpandedTasks(prev => ({ ...prev, [taskId]: !prev[taskId] }))
+
+  const handleAssignTask = async (taskId) => {
+    if (!selectedGroupId) return alert('Please select a group')
+    const taskToUpdate = existingTasks.find(t => t._id === taskId)
+    if (!taskToUpdate) return alert('Task not found')
+    const submissionDate = taskDates[taskToUpdate._id] || (taskToUpdate.submissionDate ? new Date(taskToUpdate.submissionDate).toISOString().split('T')[0] : '')
+    if (!submissionDate) return alert('Please select a submission date')
     setSaving(true)
-
-    const existingTask = existingTasks.find(t => t.taskName === taskName)
-
-    if (existingTask) {
-      updateTask(existingTask.id, {
-        submissionDate,
-        // assignedBy: currentUser.id
-      })
-    } else {
-      addTask({
-        taskName,
-        groupId: selectedGroupId,
-        submissionDate,
-        // assignedBy: currentUser.id,
-        status: 'Pending'
-      })
+    try {
+      await editTask(taskToUpdate._id, { submissionDate })
+      alert('Task date updated successfully!')
+    } catch {
+      alert('Failed to update task date')
+    } finally {
+      setSaving(false)
     }
-
-    setSaving(false)
   }
 
   const handleReview = (task, action) => {
-    console.log(task, "oppp");
-
     if (!task) return
-    const remark = remarks || ''
-
+    const remark = remarks[task._id] || ''
     const status = action === 'verify' ? 'Verified' : 'Needs Resubmit'
     reviewTask(task._id, { status, remark })
-    alert(
-      action === 'verify'
-        ? 'Task verified successfully.'
-        : 'Resubmit requested from students.'
-    )
+    alert(action === 'verify' ? 'Task verified successfully.' : 'Resubmit requested from students.')
   }
 
   const handleCreateTask = () => {
-    if (!selectedGroupId) {
-      alert('Please select a group first')
-      return
-    }
-
-    if (!newTaskName.trim()) {
-      alert('Please enter a task name')
-      return
-    }
-
-    if (!newTaskDeadline) {
-      alert('Please select a deadline')
-      return
-    }
-
-    // Check if task with same name already exists for this group
+    if (!selectedGroupId) return alert('Please select a group first')
+    if (!newTaskName.trim()) return alert('Please enter a task name')
+    if (!newTaskDeadline) return alert('Please select a deadline')
     const duplicate = existingTasks.find(t => t.taskName.toLowerCase() === newTaskName.trim().toLowerCase())
-    if (duplicate) {
-      alert('A task with this name already exists for this group')
-      return
-    }
-
+    if (duplicate) return alert('A task with this name already exists for this group')
     setSaving(true)
-
-    addTask({
-      taskName: newTaskName.trim(),
-      groupId: selectedGroupId,
-      submissionDate: newTaskDeadline,
-      // assignedBy: currentUser.id,
-      status: 'Pending'
-    })
-
-    // Reset form
+    addTask({ taskName: newTaskName.trim(), groupId: selectedGroupId, submissionDate: newTaskDeadline, status: 'Pending' })
     setNewTaskName('')
     setNewTaskDeadline('')
     setSaving(false)
@@ -239,461 +166,412 @@ const AddTask = () => {
   }
 
   const handleDeleteTask = async (taskId) => {
-    // ⭐ Confirmation popup
-    const confirmDelete = window.confirm(
-      "Are you sure you want to delete this task?"
-    );
-
-    if (!confirmDelete) return;
-
+    if (!window.confirm('Are you sure you want to delete this task?')) return
     try {
-      const res = await axios.delete(
-        `/deleteTask/${taskId}`,
-        {
-          withCredentials: true
-        }
-      );
-
-      console.log(res, "delete");
-
-      alert("Task deleted successfully ✅");
-      setExistingTasks(prev => prev.filter(task => task._id !== taskId));
-      return res.data;
-
-
-    } catch (error) {
-      console.error("Delete Task Error:", error);
-      alert("Failed to delete task ❌");
-      throw error;
+      const res = await axios.delete(`/deleteTask/${taskId}`, { withCredentials: true })
+      alert('Task deleted successfully ✅')
+      setExistingTasks(prev => prev.filter(task => task._id !== taskId))
+      return res.data
+    } catch {
+      alert('Failed to delete task ❌')
     }
-  };
-
-  const handleFinalReportDeadline = () => {
-    if (!selectedGroupId) {
-      alert("Please select a group first");
-      return;
-    }
-
-    if (!finalReportDeadline) {
-      alert("Please select a deadline for the final report");
-      return;
-    }
-
-    setSaving(true);
-
-    // ✅ Always create new task (no condition)
-    addTask({
-      taskName: "Final Report Submission",
-      groupId: selectedGroupId,
-      submissionDate: finalReportDeadline,
-      status: "Pending",
-    });
-
-    alert("Final report task created!");
-
-    setSaving(false);
-  };
-
-  const handleMarkChange = (groupId, mark) => {
-    setFinalMarks(prev => ({
-      ...prev,
-      [groupId]: mark
-    }))
   }
+
+  const handleFinalReportDeadline = async () => {
+    if (!selectedGroupId) return alert('Please select a group first')
+    if (!finalReportDeadline) return alert('Please select a deadline for the final report')
+    setSaving(true)
+    try {
+      if (finalReportTask) {
+        await editTask(finalReportTask._id, { submissionDate: finalReportDeadline })
+        alert('Final report deadline updated!')
+      } else {
+        await addTask({ taskName: 'Final Report Submission', groupId: selectedGroupId, submissionDate: finalReportDeadline, status: 'Pending' })
+        alert('Final report task created!')
+      }
+    } catch {
+      alert('Failed to set deadline')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleMarkChange = (groupId, mark) => setFinalMarks(prev => ({ ...prev, [groupId]: mark }))
 
   const handlePublishMarks = () => {
-    if (!selectedGroupId) {
-      alert('Please select a group')
-      return
-    }
-
+    if (!selectedGroupId) return alert('Please select a group')
     const mark = finalMarks[selectedGroupId]
-    if (!mark || mark < 0 || mark > 100) {
-      alert('Please enter a valid mark between 0 and 100')
-      return
-    }
-    console.log(finalReportTask, "task reprt");
-
-    if (!finalReportTask || !finalReportTask.submittedFileName) {
-      alert('No final report has been submitted yet')
-      return
-    }
-
-    if (!window.confirm(`Are you sure you want to publish the final mark of ${mark} for this group? This will make the project publicly visible.`)) {
-      return
-    }
-
+    if (!mark || mark < 0 || mark > 100) return alert('Please enter a valid mark between 0 and 100')
+    if (!finalReportTask || !finalReportTask.submittedFileName) return alert('No final report has been submitted yet')
+    if (!window.confirm(`Publish final mark of ${mark} for this group? This will make the project publicly visible.`)) return
     setSaving(true)
-
-    // Get group information for public display
     const selectedGroup = supervisedGroups.find(g => g._id === selectedGroupId)
-
-    // Update the task with the mark, mark as verified, and publish
     updateTask(finalReportTask._id, {
-      status: 'Verified',
-      reviewRemark: `Final Mark: ${mark}/100`,
-      finalMark: mark,
-      isPublished: true,
+      status: 'Verified', reviewRemark: `Final Mark: ${mark}/100`, finalMark: mark, isPublished: true,
       publishedAt: new Date().toISOString(),
-      groupInfo: {
-        id: selectedGroup._id,
-        name: selectedGroup.name,
-        topicName: selectedGroup.topicName,
-        members: selectedGroup.members
-      }
+      groupInfo: { id: selectedGroup._id, name: selectedGroup.name, topicName: selectedGroup.topicName, members: selectedGroup.members }
     })
-
     setSaving(false)
-    alert(`Final mark of ${mark} published successfully! The project is now visible to the public.`)
+    alert(`Final mark of ${mark} published successfully!`)
   }
 
-  if (!projectGroups) {
+  if (!GuideprojectGroups) {
     return (
-      <div className="flex items-center justify-center min-h-[40vh] text-slate-500">
-        Loading...
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="flex items-center gap-3 text-gray-600">
+          <div className="w-5 h-5 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin" />
+          <span className="text-base font-semibold">Loading workspace...</span>
+        </div>
       </div>
     )
   }
 
-  const selectedGroup = supervisedGroups.find(
-    g => g._id === selectedGroupId
-  )
+  const selectedGroup = supervisedGroups.find(g => g._id === selectedGroupId)
+  const today = new Date().toISOString().split('T')[0]
+  const inputBase = "w-full bg-white border border-gray-300 text-gray-900 placeholder-gray-400 rounded-xl px-4 py-2.5 text-sm font-medium outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all shadow-sm"
 
   return (
-    <div className="max-w-5xl mx-auto">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-3">
-          <FaTasks className="text-blue-600" />
-          Assign Tasks
-        </h1>
-        <p className="text-slate-600">
-          Assign tasks with submission dates to each group
-        </p>
-      </div>
+    <div className="min-h-screen bg-gray-100 p-3 rounded-xl">
+      <div className="max-w-6xl mx-auto">
 
-      {/* Group Select */}
-      <div className="bg-blue-400 p-6 rounded-xl border border-blue-400 mb-6 shadow-xl">
-        <label className="block text-sm font-semibold mb-2 text-gray-800">
-          Select Group
-        </label>
-        <select
-          value={selectedGroupId ?? ''}
-          onChange={e => setSelectedGroupId(e.target.value)} // ✅ FIX
-          className="w-full p-3 border border-gray-400 outline-none rounded-lg text-gray-700"
-        >
-          <option value="">-- Select Group --</option>
-          {supervisedGroups.map(group => (
-            <option key={group._id} value={group._id}>
-              {group.groupName} ({group.selectedMembers.length} members)
-            </option>
-          ))}
-        </select>
-
-        {selectedGroup && (
-          <div className="mt-4 p-4 bg-slate-50 rounded-lg shadow-xl">
-            <p className="text-sm font-medium mb-2 text-gray-800">Group Members:</p>
-            <ul className="text-sm text-slate-600 space-y-1">
-              {selectedGroup.selectedMembers.map(m => (
-                <li key={m._id}>• {m.name} ({m.name})</li>
-              ))}
-            </ul>
+        {/* Page Header */}
+        <div className="flex items-start justify-between mb-8">
+          <div>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="bg-blue-100 border border-blue-300 p-2.5 rounded-xl">
+                <FaTasks className="text-blue-700 w-5 h-5" />
+              </div>
+              <span className="text-blue-800 border border-blue-300 bg-blue-100 text-xs font-bold uppercase tracking-widest px-3 py-1 rounded-full">
+                Guide Panel
+              </span>
+            </div>
+            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Task Management</h1>
+            <p className="text-gray-600 text-base mt-1">Assign deadlines, review submissions & publish marks</p>
           </div>
-        )}
-      </div>
+          <div className="bg-white border border-gray-300 rounded-2xl px-5 py-4 text-right shadow-sm">
+            <p className="text-gray-600 text-xs font-bold uppercase tracking-widest mb-1">Groups</p>
+            <p className="text-blue-700 text-2xl font-extrabold">{supervisedGroups.length}</p>
+          </div>
+        </div>
 
-      {/* Task Creation & Management */}
-      {selectedGroupId && (
-        <div className="space-y-6">
-          {/* Create New Task Form */}
-          <div className="bg-gradient-to-br from-blue-400 to-blue-500 p-6 rounded-xl border border-blue-300 shadow-xl">
-            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2 text-white">
-              <FaPlus className="text-white" />
-              Create New Task
-            </h2>
+        {/* Group Selector */}
+        <div className="bg-white border border-gray-300 rounded-2xl p-5 mb-5 shadow-sm">
+          <SectionHeader
+            icon={FaUsers} title="Select Group" subtitle="Choose a project group to manage"
+            iconClass="text-blue-700" iconBgClass="bg-blue-100 border border-blue-300"
+          />
+          <div className="relative">
+            <select
+              value={selectedGroupId ?? ''}
+              onChange={e => setSelectedGroupId(e.target.value)}
+              className="w-full bg-white border border-gray-300 text-gray-800 font-medium rounded-xl px-4 py-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all appearance-none cursor-pointer shadow-sm"
+            >
+              <option value="">— Select a group —</option>
+              {supervisedGroups.map(group => (
+                <option key={group._id} value={group._id}>
+                  {group.groupName} · {group.selectedMembers.length} members
+                </option>
+              ))}
+            </select>
+            <FaChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none w-3 h-3" />
+          </div>
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-semibold mb-2 text-white">
-                  Task Name
-                </label>
-                <input
-                  type="text"
-                  value={newTaskName}
-                  onChange={(e) => setNewTaskName(e.target.value)}
-                  placeholder="e.g., Topic selection, Abstract submission, etc."
-                  className="w-full p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
-                />
+          {selectedGroup && (
+            <div className="mt-3 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 flex flex-wrap gap-2">
+              {selectedGroup.selectedMembers.map(m => (
+                <span key={m._id} className="bg-white text-blue-800 border border-blue-300 text-sm font-semibold px-3 py-1 rounded-full shadow-sm">
+                  {m.name}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {selectedGroupId && (
+          <div className="space-y-5">
+
+            {/* Create New Task */}
+            <div className="bg-white border border-gray-300 rounded-2xl p-5 shadow-sm">
+              <SectionHeader
+                icon={FaPlus} title="Create New Task" subtitle="Add a milestone for this group"
+                iconClass="text-emerald-700" iconBgClass="bg-emerald-100 border border-emerald-300"
+              />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1.5">Task Name</label>
+                  <input
+                    type="text"
+                    value={newTaskName}
+                    onChange={e => setNewTaskName(e.target.value)}
+                    placeholder="e.g., Abstract Submission"
+                    className={inputBase}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1.5">Deadline</label>
+                  <input
+                    type="date"
+                    value={newTaskDeadline}
+                    onChange={e => setNewTaskDeadline(e.target.value)}
+                    min={today}
+                    className={inputBase}
+                  />
+                </div>
               </div>
-
-              <div>
-                <label className="block text-sm font-semibold mb-2 text-white">
-                  Submission Deadline
-                </label>
-                <input
-                  type="date"
-                  value={newTaskDeadline}
-                  onChange={(e) => setNewTaskDeadline(e.target.value)}
-                  min={new Date().toISOString().split('T')[0]}
-                  className="w-full p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
-                />
-              </div>
-
               <button
                 onClick={handleCreateTask}
                 disabled={saving || !newTaskName.trim() || !newTaskDeadline}
-                className="w-full px-6 py-3 rounded-lg text-white font-semibold bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                className="mt-4 w-full py-3 rounded-xl text-base font-bold flex items-center justify-center gap-2 transition-all bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:cursor-not-allowed"
               >
-                <FaPlus />
-                Create Task
+                <FaPlus className="w-3.5 h-3.5" /> Create Task
               </button>
             </div>
-          </div>
 
-          {/* Final Report Submission Section */}
-          <div className="bg-white p-6 rounded-xl border border-blue-200 border-l-8 border-l-blue-600 shadow-sm relative overflow-hidden">
-            <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-blue-900 relative z-10">
-              <FaFlagCheckered className="text-blue-600" />
-              Final Report Submission
-              <span className="ml-auto bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest border border-blue-200">
-                PROJECT FINALE
-              </span>
-            </h2>
+            {/* Final Report Section */}
+            <div className="bg-white border border-gray-300 border-l-4 border-l-violet-600 rounded-2xl p-5 shadow-sm">
+              <div className="flex items-start justify-between mb-5">
+                <SectionHeader
+                  icon={FaFlagCheckered} title="Final Report Submission" subtitle="Project milestone & marking"
+                  iconClass="text-violet-700" iconBgClass="bg-violet-100 border border-violet-300"
+                />
+                <span className="bg-violet-100 text-violet-800 border border-violet-300 text-xs font-bold uppercase tracking-widest px-2.5 py-1 rounded-full shrink-0 mt-1">
+                  Finale
+                </span>
+              </div>
 
-            <div className="space-y-4">
-              {/* Deadline Setting */}
-              <div className="bg-white/20 p-4 rounded-lg">
-                <label className="block text-sm font-semibold mb-2 text-white">
-                  Final Report Deadline
-                </label>
+              {/* Deadline picker */}
+              <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-4">
+                <label className="block text-sm font-bold text-gray-700 mb-2">Final Report Deadline</label>
                 <div className="flex gap-3">
                   <input
                     type="date"
                     value={finalReportDeadline}
-                    onChange={(e) => setFinalReportDeadline(e.target.value)}
-                    min={new Date().toISOString().split('T')[0]}
-                    className="flex-1 p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-purple-500 text-gray-700"
+                    onChange={e => setFinalReportDeadline(e.target.value)}
+                    min={today}
+                    className={`${inputBase} flex-1`}
                   />
                   <button
                     onClick={handleFinalReportDeadline}
                     disabled={saving || !finalReportDeadline}
-                    className="px-6 py-3 rounded-lg text-white font-semibold bg-green-700 hover:bg-green-800 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                    className="px-5 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 whitespace-nowrap transition-all bg-violet-600 text-white hover:bg-violet-700 shadow-sm disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:cursor-not-allowed"
                   >
-                    <FaSave />
-                    {finalReportTask ? 'Update' : 'Set'} Deadline
+                    <FaSave className="w-3 h-3" />
+                    {finalReportTask ? 'Update' : 'Set'}
                   </button>
                 </div>
                 {finalReportTask && (
-                  <p className="text-xs text-white mt-2">
-                    ✓ Deadline set: {new Date(finalReportTask.submissionDate).toLocaleDateString()}
+                  <p className="text-sm text-violet-700 font-semibold mt-2 flex items-center gap-1.5">
+                    <FaCheckCircle className="w-3.5 h-3.5" />
+                    Deadline set: {new Date(finalReportTask.submissionDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                   </p>
                 )}
               </div>
 
-              {/* Submission Display & Marking */}
               {finalReportTask && finalReportTask.submittedFileName ? (
-                <div className="bg-red-200 p-5 rounded-lg shadow-md space-y-4">
-                  <div className="border-b pb-3">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-2">Final Report Submitted</h3>
-                    <div className="space-y-2 text-sm text-gray-700">
-                      <p><strong>File:</strong> {finalReportTask.submittedFile.fileName}</p>
-                      <p><strong>Size:</strong> {Math.round(finalReportTask.submittedFile.fileSize / 1024)} KB</p>
-                      <p><strong>Submitted:</strong> {new Date(finalReportTask.submittedFile.submittedAt).toLocaleString()}</p>
-                      <p><strong>Status:</strong>
-                        <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${finalReportTask.status === 'Verified' ? 'bg-green-100 text-green-700' :
-                          finalReportTask.status === 'Submitted' ? 'bg-blue-100 text-blue-700' :
-                            'bg-gray-100 text-gray-700'
-                          }`}>
-                          {finalReportTask.status}
-                        </span>
-                      </p>
+                <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-4">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="text-base font-bold text-gray-900 mb-3">Submitted Report</h3>
+                      <div className="space-y-2 text-sm">
+                        <p className="text-gray-800"><span className="font-bold text-gray-700">File:</span> {finalReportTask.submittedFile.fileName}</p>
+                        <p className="text-gray-800"><span className="font-bold text-gray-700">Size:</span> {Math.round(finalReportTask.submittedFile.fileSize / 1024)} KB</p>
+                        <p className="text-gray-800">
+                          <span className="font-bold text-gray-700">Submitted:</span>
+                          {finalReportTask.updatedAt
+                            ? new Date(finalReportTask.updatedAt).toLocaleString()
+                            : "No submission date"}
+                        </p>                      </div>
                     </div>
-                    <a
-                      href={`http://localhost:5000/${finalReportTask.submittedFileName}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 px-3 py-1 mt-2 text-xs font-medium text-blue-700 bg-blue-100 rounded-md hover:bg-blue-200 transition-colors"
-                    >
-                      Download Final Report
-                    </a>
+                    <StatusBadge status={finalReportTask.status} />
                   </div>
+                  <a
+                    href={`http://localhost:5000/${finalReportTask.submittedFileName}`}
+                    target="_blank" rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold bg-blue-100 text-blue-800 border border-blue-300 hover:bg-blue-200 transition-colors"
+                  >
+                    <FaFileAlt className="w-3 h-3" /> Download Report
+                  </a>
 
-                  {/* Mark Entry Section */}
-                  <div className="space-y-3">
-                    <label className="block text-sm font-semibold text-gray-800">
-                      Final Mark (out of 100)
-                    </label>
+                  <div className="border-t border-gray-300 pt-4 space-y-3">
+                    <label className="block text-sm font-bold text-gray-700">Final Mark (0–100)</label>
                     <input
-                      type="number"
-                      min="0"
-                      max="100"
+                      type="number" min="0" max="100"
                       value={finalMarks[selectedGroupId] || ''}
-                      onChange={(e) => handleMarkChange(selectedGroupId, e.target.value)}
-                      placeholder="Enter marks (0-100)"
-                      className="w-full p-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-purple-500 text-gray-700"
+                      onChange={e => handleMarkChange(selectedGroupId, e.target.value)}
+                      placeholder="Enter mark"
                       disabled={finalReportTask.status === 'Verified'}
+                      className={`${inputBase} disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed`}
                     />
-
                     {finalReportTask.finalMark && (
-                      <p className="text-sm text-green-700 font-medium">
-                        ✓ Published Mark: {finalReportTask.finalMark}/100
+                      <p className="text-sm text-emerald-700 font-bold flex items-center gap-1.5">
+                        <FaMedal className="w-4 h-4" /> Published: {finalReportTask.finalMark}/100
                       </p>
                     )}
-
                     <button
                       onClick={handlePublishMarks}
                       disabled={saving || finalReportTask.status === 'Verified' || !finalMarks[selectedGroupId]}
-                      className="w-full px-6 py-3 rounded-lg text-white font-semibold bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                      className="w-full py-3 rounded-xl text-base font-bold flex items-center justify-center gap-2 transition-all bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:cursor-not-allowed"
                     >
-                      <FaSave />
-                      {finalReportTask.status === 'Verified' ? 'Marks Published' : 'Publish Final Marks'}
+                      <FaMedal className="w-4 h-4" />
+                      {finalReportTask.status === 'Verified' ? 'Marks Published ✓' : 'Publish Final Marks'}
                     </button>
                   </div>
                 </div>
               ) : (
-                <div className="bg-white/20 p-4 rounded-lg text-center text-white">
-                  <p className="text-sm">
-                    {finalReportTask
-                      ? '⏳ Waiting for students to submit the final report...'
-                      : 'Set a deadline above to enable final report submission'}
+                <div className="bg-gray-50 border border-dashed border-gray-300 rounded-xl p-8 text-center">
+                  <FaClock className="text-gray-400 w-7 h-7 mx-auto mb-2" />
+                  <p className="text-gray-600 text-sm font-medium">
+                    {finalReportTask ? 'Awaiting student submission...' : 'Set a deadline above to enable final report submission'}
                   </p>
                 </div>
               )}
             </div>
-          </div>
 
-          {/* Existing Tasks List */}
-          <div className="bg-blue-400 p-6 rounded-xl border border-gray-300 shadow-xl">
-            <h2 className="text-xl font-semibold mb-6 flex items-center gap-2 text-gray-800">
-              <FaTasks className="text-blue-600" />
-              Assigned Tasks ({existingTasks.length})
-            </h2>
+            {/* Assigned Tasks List */}
+            <div className="bg-white border border-gray-300 rounded-2xl p-5 shadow-sm">
+              <SectionHeader
+                icon={FaTasks}
+                title="Assigned Tasks"
+                subtitle={`${existingTasks.length} task${existingTasks.length !== 1 ? 's' : ''} for this group`}
+                iconClass="text-amber-700"
+                iconBgClass="bg-amber-100 border border-amber-300"
+              />
 
-            {existingTasks.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <FaTasks className="mx-auto text-4xl mb-3 opacity-30" />
-                <p>No tasks assigned yet. Create your first task above!</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {existingTasks.map((task, index) => (
-                  <div
-                    key={task._id}
-                    className="flex flex-col gap-3 p-4 border border-gray-200 rounded-lg bg-blue-200 shadow-md"
-                  >
-                    <div className="flex items-start gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between mb-2">
-                          <label className="block text-sm font-semibold text-gray-800">
-                            {index + 1}. {task.taskName}
-                          </label>
-                          <button
-                            onClick={() => handleDeleteTask(task._id)}
-                            className="text-red-600 hover:text-red-800 transition-colors"
-                            title="Delete task"
-                          >
-                            <FaTrash />
-                          </button>
+              {existingTasks.length === 0 ? (
+                <div className="bg-gray-50 border border-dashed border-gray-300 rounded-xl p-12 text-center">
+                  <FaTasks className="text-gray-300 w-8 h-8 mx-auto mb-3" />
+                  <p className="text-gray-600 text-base font-semibold">No tasks assigned yet</p>
+                  <p className="text-gray-500 text-sm mt-1">Create your first task using the form above</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {existingTasks.map((task, index) => (
+                    <div key={task._id} className="bg-white border border-gray-300 rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                      {/* Task header row */}
+                      <div className="flex items-center gap-3 p-4">
+                        <div className="w-8 h-8 bg-gray-100 rounded-xl flex items-center justify-center text-sm font-bold text-gray-600 shrink-0">
+                          {String(index + 1).padStart(2, '0')}
                         </div>
-
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className={`text-xs px-2 py-1 rounded-full font-medium ${task.status === 'Verified' ? 'bg-green-100 text-green-700' :
-                            task.status === 'Submitted' ? 'bg-blue-100 text-blue-700' :
-                              task.status === 'Needs Resubmit' ? 'bg-orange-100 text-orange-700' :
-                                'bg-gray-100 text-gray-700'
-                            }`}>
-                            {task.status}
-                          </span>
-                          <span className="text-xs text-gray-600">
-                            Due: {new Date(task.submissionDate).toLocaleDateString()}
-                          </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-base font-bold text-gray-900 truncate">{task.taskName}</p>
+                          <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                            <StatusBadge status={task.status} />
+                            <span className="text-sm text-gray-600 font-medium flex items-center gap-1">
+                              <FaCalendarAlt className="w-3 h-3 text-gray-500" />
+                              {new Date(task.submissionDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                            </span>
+                          </div>
                         </div>
-
-                        <input
-                          type="date"
-                          value={taskDates[task.taskName] || task.submissionDate}
-                          min={new Date().toISOString().split('T')[0]}
-                          onChange={(e) =>
-                            handleDateChange(task.taskName, e.target.value)
-                          }
-                          className="w-full p-2 border border-gray-400 rounded outline-none text-sm"
-                        />
-                      </div>
-
-                      <button
-                        onClick={() => handleAssignTask(task.taskName)}
-                        disabled={saving}
-                        className="px-4 py-2 mt-6 rounded-lg text-white font-medium bg-green-600 hover:bg-green-700 disabled:bg-gray-400 transition-colors"
-                      >
-                        <FaSave className="inline mr-1" />
-                        Update
-                      </button>
-                    </div>
-
-                    {task.submittedFileName && (
-                      <div className="mt-2 p-3 bg-white/70 border border-gray-300 rounded">
-                        <p className="text-xs font-semibold text-gray-700 mb-1">
-                          Latest submission:
-                        </p>
-                        <p className="text-xs text-gray-700">
-                          File: {task.submittedFileName} (
-                          {task.submittedFileName}),{' '}
-                          {Math.round(task.submittedFileName / 1024)} KB
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          Submitted:{' '}
-                          {new Date(
-                            task.submittedFile.submittedAt
-                          ).toLocaleString()}
-                        </p>
-                        <a
-                          href={`http://localhost:5000/${task.submittedFileName}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 px-3 py-1 mt-2 text-xs font-medium text-blue-700 bg-blue-100 rounded-md hover:bg-blue-200 transition-colors"
+                        <button
+                          onClick={() => toggleExpand(task._id)}
+                          className="bg-gray-100 border border-gray-300 text-gray-600 hover:text-gray-900 hover:bg-gray-200 p-2 rounded-lg transition-colors shrink-0"
                         >
-                          Download File
-                        </a>
+                          <FaChevronDown
+                            className="w-3 h-3 transition-transform duration-200"
+                            style={{ transform: expandedTasks[task._id] ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                          />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteTask(task._id)}
+                          className="bg-gray-100 border border-gray-300 text-gray-600 hover:text-red-600 hover:bg-red-50 hover:border-red-300 p-2 rounded-lg transition-colors shrink-0"
+                        >
+                          <FaTrash className="w-3 h-3" />
+                        </button>
                       </div>
-                    )}
 
-                    {task && (
-                      <div className="mt-2 space-y-2">
-                        <textarea
-                          rows={2}
-                          className="w-full text-xs p-2 border border-gray-400 rounded outline-none"
-                          placeholder="Add remark for this task..."
-                          value={task.id in remarks ? remarks[task.id] : task.reviewRemark || ''}
-                          onChange={(e) =>
-                            handleRemarkChange(task._id, e.target.value)
-                          }
-                        />
+                      {/* Expandable details */}
+                      {expandedTasks[task._id] && (
+                        <div className="border-t border-gray-200 bg-gray-50 p-5 space-y-4">
 
-                        <div className="flex gap-2 flex-wrap">
-                          <button
-                            type="button"
-                            onClick={() => handleReview(task, 'resubmit')}
-                            className="px-3 py-1.5 text-xs rounded bg-orange-500 hover:bg-orange-600 text-white"
-                          >
-                            Send Resubmit
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleReview(task, 'verify')}
-                            className="px-3 py-1.5 text-xs rounded bg-green-600 hover:bg-green-700 text-white"
-                          >
-                            Verified OK
-                          </button>
+                          {/* Update deadline */}
+                          <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-2">Update Deadline</label>
+                            <div className="flex gap-2">
+                              <input
+                                type="date"
+                                value={taskDates[task._id] !== undefined ? taskDates[task._id] : (task.submissionDate ? new Date(task.submissionDate).toISOString().split('T')[0] : '')}
+                                min={today}
+                                onChange={e => handleDateChange(task._id, e.target.value)}
+                                className={`${inputBase} flex-1`}
+                              />
+                              <button
+                                onClick={() => handleAssignTask(task._id)}
+                                disabled={saving}
+                                className="px-4 py-2.5 rounded-xl text-sm font-bold flex items-center gap-1.5 whitespace-nowrap bg-blue-600 text-white hover:bg-blue-700 shadow-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                <FaSave className="w-3 h-3" /> Update
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* File submission */}
+                          {task.submittedFileName && (
+
+                            <div className="bg-white border border-gray-300 rounded-xl p-4 shadow-sm">
+                              <p className="text-sm font-bold text-gray-700 uppercase tracking-wide mb-2">Submission</p>
+                              <div className="text-sm space-y-1.5">
+                                <p className="text-gray-800 font-medium">{task.submittedFileName}</p>
+                                <p className="text-gray-600">
+                                  {task.updatedAt
+                                    ? new Date(task.updatedAt).toLocaleString()
+                                    : "No submission date"}
+                                </p>                              </div>
+                              <a
+                                href={`http://localhost:5000/${task.submittedFileName}`}
+                                target="_blank" rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1.5 px-3 py-2 mt-3 rounded-lg text-sm font-semibold bg-blue-100 text-blue-800 border border-blue-300 hover:bg-blue-200 transition-colors"
+                              >
+                                <FaFileAlt className="w-3 h-3" /> Download
+                              </a>
+                            </div>
+                          )}
+
+                          {/* Remark + Review actions */}
+                          <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-2">Review Remark</label>
+                            <textarea
+                              rows={2}
+                              className="w-full bg-white border border-gray-300 text-gray-900 placeholder-gray-400 rounded-xl px-4 py-2.5 text-sm font-medium outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all resize-none shadow-sm"
+                              placeholder="Add remark for this task..."
+                              value={task._id in remarks ? remarks[task._id] : task.reviewRemark || ''}
+                              onChange={e => handleRemarkChange(task._id, e.target.value)}
+                            />
+                            <div className="flex gap-2 mt-2">
+                              <button
+                                onClick={() => handleReview(task, 'resubmit')}
+                                className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors bg-amber-100 border border-amber-300 text-amber-900 hover:bg-amber-200"
+                              >
+                                Request Resubmit
+                              </button>
+                              <button
+                                onClick={() => handleReview(task, 'verify')}
+                                className="flex-1 py-2.5 rounded-xl text-sm font-bold transition-colors bg-emerald-100 border border-emerald-300 text-emerald-900 hover:bg-emerald-200"
+                              >
+                                Mark Verified
+                              </button>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {/* Empty state when no group selected */}
+        {!selectedGroupId && (
+          <div className="bg-white border border-dashed border-gray-300 rounded-2xl p-16 text-center shadow-sm">
+            <div className="bg-blue-100 border border-blue-300 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <FaUsers className="text-blue-700 w-6 h-6" />
+            </div>
+            <p className="text-gray-700 text-base font-bold">Select a group to get started</p>
+            <p className="text-gray-500 text-sm mt-1">Choose from the dropdown above</p>
+          </div>
+        )}
+      </div>
     </div>
   )
 }

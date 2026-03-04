@@ -4,7 +4,7 @@ import { useNotifications } from '../../contexts/NotificationContext'
 import { useAdmin } from '../../contexts/AdminContext'
 
 const MessageGuide = () => {
-  const { teacherNotifications, markTeacherNotificationAsRead, markAllTeacherNotificationsAsRead, sendGuideMessageToStudent , Notifications } = useNotifications()
+  const { teacherNotifications, markTeacherNotificationAsRead, markAllTeacherNotificationsAsRead, sendGuideMessageToStudent, Notifications } = useNotifications()
   const { students } = useAdmin()
 
   const [filter, setFilter] = useState('all')
@@ -14,9 +14,9 @@ const MessageGuide = () => {
   const [selectedStudent, setSelectedStudent] = useState('')
 
   // Use notifications from context
-  const notifications =  Notifications
+  const notifications = Notifications
   console.log("teacher ", notifications);
-  
+
 
 
   const markAsRead = (id) => {
@@ -42,7 +42,8 @@ const MessageGuide = () => {
     alert('Message sent successfully!')
   }
 
-  const filteredNotifications = notifications.filter(notification => {
+  const filteredNotifications = (notifications || []).filter(notification => {
+    if (!notification) return false
     if (filter === 'all') return true
     if (filter === 'unread') return !notification.read
     if (filter === 'admin') return notification.type === 'admin'
@@ -67,8 +68,11 @@ const MessageGuide = () => {
   }
 
   const formatTimestamp = (timestamp) => {
+    if (!timestamp) return 'Unknown'
+    const date = new Date(timestamp)
+    if (isNaN(date.getTime())) return 'Unknown'
     const now = new Date()
-    const diff = now - timestamp
+    const diff = now - date
     const minutes = Math.floor(diff / (1000 * 60))
     const hours = Math.floor(diff / (1000 * 60 * 60))
     const days = Math.floor(diff / (1000 * 60 * 60 * 24))
@@ -79,7 +83,7 @@ const MessageGuide = () => {
     return `${days}d ago`
   }
 
-  const unreadCount = notifications.filter(n => !n.read).length
+  const unreadCount = (notifications || []).filter(n => n && !n.read).length
 
   if (isLoading) {
     return (
@@ -179,19 +183,18 @@ const MessageGuide = () => {
         {/* Filter Tabs */}
         <div className="flex flex-wrap gap-2">
           {[
-            { value: 'all', label: 'All', count: notifications.length },
+            { value: 'all', label: 'All', count: (notifications || []).length },
             { value: 'unread', label: 'Unread', count: unreadCount },
-            { value: 'admin', label: 'Admin', count: notifications.filter(n => n.type === 'admin').length },
-            { value: 'student', label: 'Students', count: notifications.filter(n => n.type === 'student').length }
+            { value: 'admin', label: 'Admin', count: (notifications || []).filter(n => n && n.type === 'admin').length },
+            { value: 'student', label: 'Students', count: (notifications || []).filter(n => n && n.type === 'student').length }
           ].map((tab) => (
             <button
               key={tab.value}
               onClick={() => setFilter(tab.value)}
-              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                filter === tab.value
+              className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${filter === tab.value
                   ? 'bg-blue-100 text-blue-700 border-2 border-blue-200'
                   : 'text-slate-600 hover:bg-slate-100 border-2 border-transparent'
-              }`}
+                }`}
             >
               {tab.label} ({tab.count})
             </button>
@@ -213,9 +216,8 @@ const MessageGuide = () => {
           filteredNotifications.map((notification) => (
             <div
               key={notification._id}
-              className={`bg-white rounded-2xl shadow-lg border transition-all duration-200 hover:shadow-xl ${
-                notification.read ? 'border-slate-200/60' : `border-2 ${getNotificationTypeColor(notification.type, notification.priority)}`
-              }`}
+              className={`bg-white rounded-2xl shadow-lg border transition-all duration-200 hover:shadow-xl ${notification.read ? 'border-slate-200/60' : `border-2 ${getNotificationTypeColor(notification.type, notification.priority)}`
+                }`}
             >
               <div className="p-6">
                 <div className="flex items-start justify-between">
@@ -226,9 +228,8 @@ const MessageGuide = () => {
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center space-x-3 mb-2">
-                        <h3 className={`text-lg font-semibold ${
-                          notification.read ? 'text-slate-900' : 'text-slate-900'
-                        }`}>
+                        <h3 className={`text-lg font-semibold ${notification.read ? 'text-slate-900' : 'text-slate-900'
+                          }`}>
                           {notification.title}
                         </h3>
                         {!notification.read && (
@@ -241,26 +242,24 @@ const MessageGuide = () => {
                         )}
                       </div>
 
-                      <p className={`mb-3 leading-relaxed ${
-                        notification.read ? 'text-slate-600' : 'text-slate-700'
-                      }`}>
+                      <p className={`mb-3 leading-relaxed ${notification.read ? 'text-slate-600' : 'text-slate-700'
+                        }`}>
                         {notification.message}
                       </p>
 
                       <div className="flex items-center space-x-4 text-sm text-slate-500">
                         <span className="flex items-center">
                           <FiClock className="w-4 h-4 mr-1" />
-                          {formatTimestamp(notification.timestamp)}
+                          {formatTimestamp(notification.createdAt || notification.timestamp)}
                         </span>
-                        <span>From: {notification.sender}</span>
+                        <span>From: {notification.sender || 'System'}</span>
                         {notification.recipient && (
                           <span>To: {notification.recipient}</span>
                         )}
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          notification.priority === 'high' ? 'bg-red-100 text-red-700' :
-                          notification.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                          'bg-slate-100 text-slate-700'
-                        }`}>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${notification.priority === 'high' ? 'bg-red-100 text-red-700' :
+                            notification.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                              'bg-slate-100 text-slate-700'
+                          }`}>
                           {notification.priority || 'normal'}
                         </span>
                       </div>
@@ -270,7 +269,7 @@ const MessageGuide = () => {
                   {!notification.read && notification.type !== 'sent' && (
                     <div className="flex-shrink-0 ml-4">
                       <button
-                        onClick={() => markAsRead(notification.id)}
+                        onClick={() => markAsRead(notification._id)}
                         className="flex items-center space-x-2 px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 text-sm font-medium rounded-lg transition-colors duration-200"
                       >
                         <FiCheckCircle className="w-4 h-4" />
