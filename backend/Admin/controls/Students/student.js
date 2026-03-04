@@ -281,7 +281,7 @@ export const getSudentProfile = async (req, res) => {
     // ✅ Logged-in guide ID from JWT middleware
     const studentId = req.user.id?.id;
 
-   
+
 
     if (!studentId) {
       return res.status(400).json({
@@ -321,7 +321,7 @@ export const getSudentProfile = async (req, res) => {
 export const updateStudentProfile = async (req, res) => {
   try {
     const studentId = req.user.id?.id;
- console.log(studentId, "student");
+    console.log(studentId, "student");
     if (!studentId) {
       return res.status(400).json({
         success: false,
@@ -335,16 +335,14 @@ export const updateStudentProfile = async (req, res) => {
       email,
       username,
       department,
-      specialization,
       dob,
       phone,
       place,
       address,
-      teacherId,
+      registerNumber,
     } = req.body;
 
     console.log(req.body, "bodd");
-
 
     const updateData = {};
 
@@ -353,14 +351,13 @@ export const updateStudentProfile = async (req, res) => {
     if (email) updateData.email = email;
     if (username) updateData.username = username;
     if (department) updateData.department = department;
-    if (specialization) updateData.specialization = specialization;
 
     // ✅ Extra profile fields
     if (dob) updateData.dob = dob;
     if (phone) updateData.phone = phone;
     if (place) updateData.place = place;
     if (address) updateData.address = address;
-    if (teacherId) updateData.teacherId = teacherId;
+    if (registerNumber) updateData.rollNo = registerNumber;
 
     // ✅ Handle uploaded image
     // console.log(req.file, "file");

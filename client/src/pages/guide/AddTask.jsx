@@ -145,9 +145,14 @@ const AddTask = () => {
 
   const handleReview = (task, action) => {
     if (!task) return
-    const remark = remarks[task._id] || ''
+    const reviewRemark = remarks[task._id] || ''
     const status = action === 'verify' ? 'Verified' : 'Needs Resubmit'
-    reviewTask(task._id, { status, remark })
+    reviewTask(task._id, { status, reviewRemark })
+    // ✅ clear remark field
+    setRemarks(prev => ({
+      ...prev,
+      [task._id]: ''
+    }))
     alert(action === 'verify' ? 'Task verified successfully.' : 'Resubmit requested from students.')
   }
 

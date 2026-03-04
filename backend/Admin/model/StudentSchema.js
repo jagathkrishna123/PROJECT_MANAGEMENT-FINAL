@@ -35,9 +35,25 @@ const studentSchema = new mongoose.Schema(
       unique: true,
       trim: true,
     },
-     profileImage: {
+    profileImage: {
       type: String,
       default: null,
+    },
+    dob: {
+      type: String,
+      default: "",
+    },
+    phone: {
+      type: String,
+      default: "",
+    },
+    place: {
+      type: String,
+      default: "",
+    },
+    address: {
+      type: String,
+      default: "",
     },
 
 

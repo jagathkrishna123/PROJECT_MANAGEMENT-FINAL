@@ -11,8 +11,9 @@ const ProjectGroups = () => {
     [departments]
   )
 
+  console.log(projectGroups, "gro");
 
-  
+
 
   const groupsWithMeta = useMemo(() => {
     const list = [...(projectGroups || [])]
@@ -126,7 +127,7 @@ const ProjectGroups = () => {
                     Members ({group.selectedMembers?.length || 0})
                   </h3>
                   <div className="border border-gray-200 rounded-md divide-y">
-                    {(group.selectedMembers|| []).map(m => (
+                    {(group.selectedMembers || []).map(m => (
                       <div
                         key={m._id}
                         className="px-3 py-2 text-sm text-gray-700 flex flex-wrap items-center gap-x-2 gap-y-1"

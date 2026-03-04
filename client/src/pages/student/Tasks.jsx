@@ -522,6 +522,9 @@ const Tasks = () => {
   const regularTasks = groupTasks.filter(t => t.taskName !== 'Final Report Submission')
   const finalTask = groupTasks.find(t => t.taskName === 'Final Report Submission')
 
+  console.log(regularTasks, "tasks");
+
+
   return (
     <div className="min-h-screen bg-gray-50 p-6 md:p-8">
       <div className="max-w-6xl mx-auto">
@@ -637,8 +640,8 @@ const Tasks = () => {
                           </div>
                           <button
                             onClick={() => {
-                              console.log("Downloading file:", task.submittedFileName);
-                              handleDownload(task.submittedFileName);
+                              console.log("Downloading file:", task.submittedFilePath);
+                              handleDownload(task.submittedFilePath);
                             }}
                             className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition-all shadow-sm active:scale-95"
                           >

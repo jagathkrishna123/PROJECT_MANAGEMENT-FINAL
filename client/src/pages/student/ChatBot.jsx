@@ -5,19 +5,29 @@ import { Send, Bot, User, Loader2, Trash2, MessageSquare } from 'lucide-react';
 import ReactMarkdown from "react-markdown";
 
 const ChatBot = () => {
-  // const [messages, setMessages] = useState([
-  //   { role: 'assistant', content: "Hello! I'm your AI assistant. How can I help you with your projects today?" }
-  // ]);
-  const [messages, setMessages] = useState(() => {
-    const saved = localStorage.getItem("chat_messages");
-    return saved
-      ? JSON.parse(saved)
-      : [{ role: 'assistant', content: "Hello! I'm your AI assistant." }];
-  });
+  const [messages, setMessages] = useState([
+    { role: 'assistant', content: "Hello! I'm your AI assistant. How can I help you with your projects today?" }
+  ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef(null);
 
+  // Fetch chat history on mount
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/api/chat-history', {
+          withCredentials: true
+        });
+        if (response.data.success && response.data.messages.length > 0) {
+          setMessages(response.data.messages);
+        }
+      } catch (error) {
+        console.error("Error fetching chat history:", error);
+      }
+    };
+    fetchHistory();
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -25,10 +35,6 @@ const ChatBot = () => {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
-
-  useEffect(() => {
-    localStorage.setItem("chat_messages", JSON.stringify(messages));
   }, [messages]);
 
 
@@ -43,10 +49,9 @@ const ChatBot = () => {
 
     try {
       const response = await axios.post('http://localhost:5000/api/chat', {
-        messages: [...messages, userMessage]
-      });
+        messages: [userMessage] // Backend logic appends it
+      }, { withCredentials: true });
 
-      // const aiMessage = { role: 'assistant', content: response.data.content };
       const aiMessage = {
         role: 'assistant',
         content: String(response.data.content)
@@ -61,8 +66,16 @@ const ChatBot = () => {
     }
   };
 
-  const clearChat = () => {
-    setMessages([{ role: 'assistant', content: "Chat cleared. How can I help you?" }]);
+  const clearChat = async () => {
+    try {
+      await axios.delete('http://localhost:5000/api/clear-chat', {
+        withCredentials: true
+      });
+      setMessages([{ role: 'assistant', content: "Chat cleared. How can I help you?" }]);
+    } catch (error) {
+      console.error("Error clearing chat:", error);
+      alert("Failed to clear chat history");
+    }
   };
 
   return (

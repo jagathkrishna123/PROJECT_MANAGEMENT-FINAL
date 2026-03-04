@@ -3,7 +3,7 @@ import { FaUser, FaEnvelope, FaIdCard, FaBuilding, FaPhone, FaMapMarkerAlt, FaCa
 import { useAdmin } from '../../contexts/AdminContext'
 
 const StudentProfile = () => {
-  const {updateStudentProfile, Studentprofiles } = useAdmin()
+  const { updateStudentProfile, Studentprofiles } = useAdmin()
   const [currentUser, setCurrentUser] = useState(null)
   const [profileData, setProfileData] = useState({
     dob: '',
@@ -27,21 +27,17 @@ const StudentProfile = () => {
 
       setCurrentUser(Studentprofiles)
 
-      // const existingProfile = getProfile(user.id)
-      // if (existingProfile) {
-      //   setProfileData({
-      //     dob: existingProfile.dob || '',
-      //     phone: existingProfile.phone || '',
-      //     place: existingProfile.place || '',
-      //     address: existingProfile.address || '',
-      //     registerNumber: existingProfile.registerNumber || '',
-      //     profileImage: existingProfile.profileImage || ''
-      //   })
+      if (Studentprofiles) {
+        setProfileData({
+          dob: Studentprofiles.dob || '',
+          phone: Studentprofiles.phone || '',
+          place: Studentprofiles.place || '',
+          address: Studentprofiles.address || '',
+          registerNumber: Studentprofiles.rollNo || '',
+          profileImage: Studentprofiles.profileImage || ''
+        })
+      }
 
-      //   if (existingProfile.profileImage) {
-
-      //   }
-      // }
       setImagePreview(
         Studentprofiles.profileImage
           ? `http://localhost:5000/uploads/${Studentprofiles.profileImage}`
@@ -105,7 +101,7 @@ const StudentProfile = () => {
     setSaving(true)
 
     try {
-       updateStudentProfile(currentUser.id, profileData)
+      updateStudentProfile(currentUser.id, profileData)
       setMessage({ type: 'success', text: 'Profile updated successfully!' })
 
       setTimeout(() => {

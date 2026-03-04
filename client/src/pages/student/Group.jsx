@@ -563,8 +563,8 @@ const Group = () => {
                     <MdTopic className="text-indigo-600 w-4 h-4" />
                   </div>
                   <div>
-                    <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-0.5">Topic</p>
-                    <p className="text-sm font-semibold text-slate-800">{userGroup.topicName || 'Not specified'}</p>
+                    <p className="text-[12px] font-semibold text-slate-500 uppercase tracking-wider mb-0.5">Topic</p>
+                    <p className="text-md font-semibold text-slate-800">{userGroup.topicName || 'Not specified'}</p>
                   </div>
                 </div>
 
@@ -577,8 +577,8 @@ const Group = () => {
                     }
                   </div>
                   <div>
-                    <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-0.5">Status</p>
-                    <span className={`text-sm font-semibold ${userGroup.status === 'Accepted' ? 'text-emerald-700' : 'text-amber-700'}`}>
+                    <p className="text-[12px] font-semibold text-slate-500 uppercase tracking-wider mb-0.5">Status</p>
+                    <span className={`text-md font-semibold ${userGroup.status === 'Accepted' ? 'text-emerald-700' : 'text-amber-700'}`}>
                       {userGroup.status ?? 'Pending Acceptance'}
                     </span>
                   </div>
@@ -591,9 +591,9 @@ const Group = () => {
                       <FaChalkboardTeacher className="text-violet-600 w-4 h-4" />
                     </div>
                     <div>
-                      <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-0.5">Supervisor</p>
-                      <p className="text-sm font-semibold text-slate-800">{assignedGuide.teacherName}</p>
-                      <p className="text-xs font-medium text-slate-600">{assignedGuide.username}</p>
+                      <p className="text-[12px] font-semibold text-slate-500 uppercase tracking-wider mb-0.5">Supervisor</p>
+                      <p className="text-md font-semibold text-slate-800">{assignedGuide.teacherName}</p>
+                      <p className="text-md font-medium text-slate-600">{assignedGuide.username}</p>
                     </div>
                   </div>
                 )}
@@ -604,8 +604,8 @@ const Group = () => {
                     <HiOutlineCalendar className="text-sky-600 w-4 h-4" />
                   </div>
                   <div>
-                    <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-0.5">Created On</p>
-                    <p className="text-sm font-semibold text-slate-800">{new Date(userGroup.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                    <p className="text-[12px] font-semibold text-slate-500 uppercase tracking-wider mb-0.5">Created On</p>
+                    <p className="text-md font-semibold text-slate-800">{new Date(userGroup.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
                   </div>
                 </div>
               </div>
@@ -620,7 +620,7 @@ const Group = () => {
                         {initials(member.name)}
                       </div>
                       <div>
-                        <p className="text-sm font-semibold text-slate-800 leading-tight">{member.name}</p>
+                        <p className="text-md font-semibold text-slate-800 leading-tight">{member.name}</p>
                         <p className="text-xs font-medium text-slate-600">{department}</p>
                       </div>
                       {member._id === currentUser?.id && (

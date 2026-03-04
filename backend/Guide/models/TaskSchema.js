@@ -46,7 +46,7 @@ const taskSchema = new mongoose.Schema(
             default: 0,
             min: 0,
         },
-        remark: {
+        reviewRemark: {
             type: String,
             trim: true,
             default: "",

@@ -21,6 +21,7 @@ import GuidRoutes from "./Admin/routes/guid.js"
 import NotificationRoutes from "./Admin/routes/notifications.js"
 import GroupRoutes from "./Student/Routes/GroupRoutes.js"
 import TaskRouts from "./Guide/routes/taskRoutes.js"
+import ChatRoutes from "./Chat/routes/chatRoutes.js"
 // Middlewares
 
 app.use(express.json({ limit: '50mb' })); // default is 100kb
@@ -59,38 +60,6 @@ const openrouter = new OpenRouter({
     apiKey: process.env.OPENROUTER_API_KEY
 });
 
-// AI Chat endpoint
-app.post("/api/chat", async (req, res) => {
-    try {
-        const { messages } = req.body;
-
-        if (!messages || !Array.isArray(messages)) {
-            return res.status(400).json({ error: "Messages are required." });
-        }
-
-        // Get only the last user message
-        const lastUserMessage = messages
-            .filter(msg => msg.role === "user")
-            .slice(-1);
-
-        const response = await openrouter.chat.send({
-            chatGenerationParams: {
-                model: "openrouter/free",
-                messages: lastUserMessage,
-            }
-        });
-
-        const content = response.choices[0]?.message?.content;
-        res.json({ content });
-
-    } catch (error) {
-        console.error("FULL AI ERROR:", error);
-        res.status(500).json({
-            error: error.message || "AI request failed"
-        });
-    }
-});
-
 
 
 app.use("/api", AdminRoutes)
@@ -100,6 +69,7 @@ app.use("/api", GuidRoutes)
 app.use("/api", NotificationRoutes)
 app.use("/api", GroupRoutes)
 app.use("/api", TaskRouts)
+app.use("/api", ChatRoutes)
 
 // Start server
 app.listen(PORT, () => {

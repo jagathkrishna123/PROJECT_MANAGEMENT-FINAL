@@ -797,11 +797,11 @@ export const AdminProvider = ({ children }) => {
     }
   };
 
-  const reviewTask = async (taskId, { status, remark }) => {
+  const reviewTask = async (taskId, { status, reviewRemark }) => {
     try {
       const res = await axios.put(
         `/reviewTask/${taskId}`,
-        { status, remark },
+        { status, reviewRemark },
         { withCredentials: true }
       );
 
@@ -865,7 +865,7 @@ export const AdminProvider = ({ children }) => {
   };
 
   const updateStudentProfile = async (userId, profileData) => {
-    console.log(profileData, "prifile dat");
+    console.log(profileData, "profile data");
 
     try {
       const formData = new FormData();
@@ -875,10 +875,10 @@ export const AdminProvider = ({ children }) => {
       formData.append("phone", profileData.phone);
       formData.append("place", profileData.place);
       formData.append("address", profileData.address);
-      formData.append("teacherId", profileData.teacherId);
+      formData.append("registerNumber", profileData.registerNumber);
 
       // ✅ append image ONLY if selected
-      if (profileData.profileImage) {
+      if (profileData.profileImage && profileData.profileImage instanceof File) {
         formData.append("file", profileData.profileImage);
       }
 
@@ -894,6 +894,9 @@ export const AdminProvider = ({ children }) => {
       );
 
       console.log("Profile updated:", res.data);
+      if (res.data.success) {
+        setStudentProfiles(res.data.data);
+      }
 
       return res.data;
 

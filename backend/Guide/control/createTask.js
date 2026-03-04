@@ -153,6 +153,7 @@ export const reviewTask = async (req, res) => {
     // ✅ Update fields
     if (status) task.status = status;
     if (remark !== undefined) task.reviewRemark = remark;
+    if (req.body.reviewRemark !== undefined) task.reviewRemark = req.body.reviewRemark;
 
     task.reviewedAt = new Date();
 
@@ -329,6 +330,9 @@ export const publishFinalMarks = async (req, res) => {
     // ✅ Save final mark
     task.marks = finalMark;
     task.status = "Verified";
+    if (req.body.reviewRemark !== undefined) {
+      task.reviewRemark = req.body.reviewRemark;
+    }
     task.submissionDate = new Date(); // optional but useful
 
     await task.save();
