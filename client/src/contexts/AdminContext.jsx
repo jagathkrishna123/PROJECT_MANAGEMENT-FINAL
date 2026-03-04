@@ -761,13 +761,14 @@ export const AdminProvider = ({ children }) => {
   // };
 
 
-  const submitTaskFile = async (taskId, file) => {
+  const submitTaskFile = async (taskId, file, links = {}) => {
     try {
       if (!file) throw new Error("No file selected");
 
       const formData = new FormData();
       formData.append("file", file);
-      // formData.append("fileName", file.name);  // optional
+      if (links.projectGitLink) formData.append("projectGitLink", links.projectGitLink);
+      if (links.projectLiveLink) formData.append("projectLiveLink", links.projectLiveLink);
 
       const res = await axios.put(
         `/submitTaskFile/${taskId}`,

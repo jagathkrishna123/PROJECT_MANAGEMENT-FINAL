@@ -68,6 +68,14 @@ const taskSchema = new mongoose.Schema(
             type: String,
             default: "",
         },
+        projectGitLink: {
+            type: String,
+            default: "",
+        },
+        projectLiveLink: {
+            type: String,
+            default: "",
+        },
 
         status: {
             type: String,

@@ -187,12 +187,16 @@ export const submitTaskFile = async (req, res) => {
     }
 
     // Store **file path** relative to uploads folder
+    const { projectGitLink, projectLiveLink } = req.body;
+
     const updatedTask = await Task.findByIdAndUpdate(
       taskId,
       {
         submittedFileName: file.originalname, // use original name from user
         submittedFilePath: `uploads/${file.filename}`, // store the relative path for serving
         submittedFileType: file.mimetype,
+        projectGitLink: projectGitLink || "",
+        projectLiveLink: projectLiveLink || "",
         status: "Submitted",
       },
       { new: true }

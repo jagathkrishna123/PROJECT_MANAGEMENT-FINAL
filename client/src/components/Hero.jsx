@@ -265,7 +265,7 @@ const Hero = () => {
   const [menuOpen, setMenuOpen] = useState(false)
   const [activeTestimonial, setActiveTestimonial] = useState(0)
   const [scrolled, setScrolled] = useState(false)
-  
+
 
 
   useEffect(() => {
@@ -483,18 +483,32 @@ const Hero = () => {
       <section className="cta-section" id="cta">
         <div className="cta-blob-1" />
         <div className="cta-blob-2" />
+
         <div className="cta-inner">
           <div className="section-label light">Get Started</div>
-          <h2 className="cta-heading">Ready to modernize your FYP management?</h2>
-          <p className="cta-sub">Join hundreds of universities already running smoother, more transparent final year project cycles.</p>
+
+          <h2 className="cta-heading">
+            Track your Final Year Project easily
+          </h2>
+
+          <p className="cta-sub">
+            Manage tasks, track progress, and submit reports for your final year project in one place.
+          </p>
+
           <div className="cta-actions">
             <a href="" className="btn-white btn-lg">
-              Start Free Trial
+              Start Now
               <Icon d={['M5 12h14', 'm12 5 7 7-7 7']} size={18} />
             </a>
-            <a href="/login" className="btn-outline-white btn-lg">Login to Dashboard</a>
+
+            <a href="/login" className="btn-outline-white btn-lg">
+              Login to Dashboard
+            </a>
           </div>
-          <p className="cta-note">No credit card required · Free 30-day trial · Cancel anytime</p>
+
+          <p className="cta-note">
+            Simple project tracking for students and guides
+          </p>
         </div>
       </section>
 
@@ -502,9 +516,14 @@ const Hero = () => {
       <footer className="footer">
         <div className="footer-inner">
           <div className="footer-brand">
-            <div className="logo-mark sm">C</div>
-            <span className="footer-name">CAPSTONE</span>
-            <p className="footer-tagline">The academic project monitoring platform built for clarity, structure, and results.</p>
+            <div className="footer-logo">
+              <img src={CAPSLOGO} alt="Capstone Logo" className="logo-img" />
+              <span className="footer-name">CAPSTONE</span>
+            </div>
+
+            <p className="footer-tagline">
+              The academic project monitoring platform built for clarity, structure, and results.
+            </p>
           </div>
           <div className="footer-links-group">
             <div className="footer-col">
@@ -885,6 +904,22 @@ const Hero = () => {
           background: linear-gradient(135deg, #1e40af 0%, #2563eb 50%, #7c3aed 100%);
           padding: 100px 40px; text-align: center; color: white;
         }
+          .footer-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-img {
+  width: 70px;
+  height: 70px;
+  object-fit: contain;
+}
+
+.footer-name {
+  font-size: 20px;
+  font-weight: 600;
+}
         .cta-blob-1 { position: absolute; width: 500px; height: 500px; border-radius: 50%; background: rgba(255,255,255,0.07); top: -150px; left: -100px; pointer-events: none; }
         .cta-blob-2 { position: absolute; width: 400px; height: 400px; border-radius: 50%; background: rgba(255,255,255,0.07); bottom: -100px; right: -50px; pointer-events: none; }
         .cta-inner { position: relative; z-index: 1; max-width: 680px; margin: 0 auto; }
@@ -895,13 +930,23 @@ const Hero = () => {
 
         /* ── Footer ── */
         .footer { background: var(--text); color: rgba(255,255,255,0.7); padding: 70px 60px 30px; }
-        .footer-inner { display: flex; gap: 60px; max-width: 1100px; margin: 0 auto 60px; flex-wrap: wrap; }
-        .footer-brand { max-width: 240px; }
+.footer-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 80px;
+  width: 100%;
+  padding: 0 80px;
+  margin-bottom: 60px;
+}       .footer-brand { max-width: 240px; }
         .footer-name { font-family: 'Sora', sans-serif; font-weight: 800; color: white; font-size: 17px; margin-left: 10px; }
         .footer-brand .nav-logo { color: white; margin-bottom: 16px; display: flex; align-items: center; }
         .footer-tagline { font-size: 14px; line-height: 1.7; margin-top: 12px; }
-        .footer-links-group { display: flex; gap: 60px; flex: 1; flex-wrap: wrap; }
-        .footer-col { display: flex; flex-direction: column; gap: 12px; }
+.footer-links-group {
+  display: flex;
+  gap: 100px;      /* big gap between columns */
+  flex-wrap: wrap;
+}        .footer-col { display: flex; flex-direction: column; gap: 12px; }
         .footer-col-title { font-family: 'Sora', sans-serif; font-weight: 700; font-size: 14px; color: white; margin-bottom: 4px; }
         .footer-col a { font-size: 14px; color: rgba(255,255,255,0.6); text-decoration: none; transition: color .2s; }
         .footer-col a:hover { color: white; }

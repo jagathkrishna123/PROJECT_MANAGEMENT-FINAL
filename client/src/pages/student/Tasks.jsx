@@ -378,6 +378,7 @@ const Tasks = () => {
   const [groupTasks, setGroupTasks] = useState([])
   const [uploadingTaskId, setUploadingTaskId] = useState(null)
   const [selectedFiles, setSelectedFiles] = useState({})
+  const [finalLinks, setFinalLinks] = useState({ projectGitLink: '', projectLiveLink: '' });
 
   console.log(tasks, "tasks");
 
@@ -446,14 +447,15 @@ const Tasks = () => {
     document.body.removeChild(link);
   };
 
-  const handleSubmitFile = async (taskId) => {
+  const handleSubmitFile = async (taskId, isFinal = false) => {
     const fileData = selectedFiles[taskId];
     if (!fileData) return alert('Please select a file first');
 
     setUploadingTaskId(taskId);
 
     try {
-      await submitTaskFile(taskId, fileData.file);
+      const links = isFinal ? finalLinks : {};
+      await submitTaskFile(taskId, fileData.file, links);
 
       alert('File submitted successfully!');
 
@@ -463,7 +465,7 @@ const Tasks = () => {
         return next;
       });
 
-      // No need to manually setGroupTasks anymore — context updated → useEffect will react
+      if (isFinal) setFinalLinks({ projectGitLink: '', projectLiveLink: '' });
 
     } catch (err) {
       alert('Error submitting file. Please try again.');
@@ -807,13 +809,39 @@ const Tasks = () => {
                           <InfoRow label="File" value={finalTask.submittedFileName || (finalTask.submittedFile && finalTask.submittedFile.fileName) || 'View File'} />
                           {(finalTask.submittedFile && finalTask.submittedFile.fileSize) ? <InfoRow label="Size" value={formatFileSize(finalTask.submittedFile.fileSize)} /> : null}
                           <InfoRow label="On" value={new Date(finalTask.updatedAt || finalTask.submittedFile?.submittedAt || Date.now()).toLocaleString()} />
+                          {finalTask.projectGitLink && <InfoRow label="Git Link" value={<a href={finalTask.projectGitLink} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{finalTask.projectGitLink}</a>} />}
+                          {finalTask.projectLiveLink && <InfoRow label="Live Preview" value={<a href={finalTask.projectLiveLink} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{finalTask.projectLiveLink}</a>} />}
                         </div>
                       </div>
                     )}
 
                     {/* Upload */}
                     {!isSubmitted && (
-                      <div className="space-y-3">
+                      <div className="space-y-4">
+                        {/* Final Links Inputs */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1.5">Project Git Link</label>
+                            <input
+                              type="url"
+                              placeholder="https://github.com/..."
+                              value={finalLinks.projectGitLink}
+                              onChange={(e) => setFinalLinks(prev => ({ ...prev, projectGitLink: e.target.value }))}
+                              className="w-full bg-violet-50 border border-violet-200 text-gray-900 placeholder-gray-400 rounded-xl px-4 py-2.5 text-sm font-medium outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100 transition-all shadow-sm"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide mb-1.5">Live Preview Link</label>
+                            <input
+                              type="url"
+                              placeholder="https://project.vercel.app"
+                              value={finalLinks.projectLiveLink}
+                              onChange={(e) => setFinalLinks(prev => ({ ...prev, projectLiveLink: e.target.value }))}
+                              className="w-full bg-violet-50 border border-violet-200 text-gray-900 placeholder-gray-400 rounded-xl px-4 py-2.5 text-sm font-medium outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100 transition-all shadow-sm"
+                            />
+                          </div>
+                        </div>
+
                         <div>
                           <p className="text-sm font-bold text-gray-800 mb-1">Upload Final Report</p>
                           <p className="text-sm text-gray-600 mb-3">Accepted: PDF, DOC, DOCX, ZIP, RAR &nbsp;·&nbsp; Max 10MB</p>
@@ -846,7 +874,7 @@ const Tasks = () => {
 
                         {hasFile && (
                           <button
-                            onClick={() => handleSubmitFile(finalTask._id)}
+                            onClick={() => handleSubmitFile(finalTask._id, true)}
                             disabled={uploadingTaskId === finalTask._id}
                             className="w-full py-3 rounded-xl text-base font-bold flex items-center justify-center gap-2 transition-all bg-violet-600 text-white hover:bg-violet-700 shadow-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                           >

@@ -385,7 +385,20 @@ const AddTask = () => {
                           {finalReportTask.updatedAt
                             ? new Date(finalReportTask.updatedAt).toLocaleString()
                             : "No submission date"}
-                        </p>                      </div>
+                        </p>
+                        {finalReportTask.projectGitLink && (
+                          <p className="text-gray-800">
+                            <span className="font-bold text-gray-700">Git Link:</span>{" "}
+                            <a href={finalReportTask.projectGitLink} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{finalReportTask.projectGitLink}</a>
+                          </p>
+                        )}
+                        {finalReportTask.projectLiveLink && (
+                          <p className="text-gray-800">
+                            <span className="font-bold text-gray-700">Live Preview:</span>{" "}
+                            <a href={finalReportTask.projectLiveLink} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{finalReportTask.projectLiveLink}</a>
+                          </p>
+                        )}
+                      </div>
                     </div>
                     <StatusBadge status={finalReportTask.status} />
                   </div>
