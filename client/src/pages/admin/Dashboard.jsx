@@ -39,7 +39,7 @@ const Dashboard = () => {
       totalGuides: guides.length,
       activeProjects: projectGroups.filter(p => p.status !== 'Rejected').length,
       totalTasks: tasks.length,
-      completedTasks: tasks.filter(t => t.status === 'Completed').length,
+      completedTasks: tasks.filter(t => t.status === 'Verified').length,
       pendingTasks: tasks.filter(t => t.status === 'Pending').length,
       activeDepartments: departments.length,
       unreadNotifications: Notifications.filter(n => !n.read).length
@@ -81,7 +81,7 @@ const Dashboard = () => {
         timestamp: new Date(t.createdAt || Date.now()),
         icon: FiClipboard
       })),
-      ...tasks.filter(t => t.status === 'Completed').map(t => ({
+      ...tasks.filter(t => t.status === 'Verified').map(t => ({
         id: `task-comp-${t.id}`,
         type: 'task_completed',
         message: 'Task marked as completed',

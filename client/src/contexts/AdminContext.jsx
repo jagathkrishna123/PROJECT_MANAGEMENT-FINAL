@@ -47,10 +47,14 @@ export const AdminProvider = ({ children }) => {
   // useEffect(() => { saveToStorage(STORAGE_KEYS.TASKS, tasks) }, [tasks])
   // useEffect(() => { saveToStorage(STORAGE_KEYS.PROFILES, profiles) }, [profiles])
 
+  // const getCurrentAcademicYear = () => {
+  //   const y = new Date().getFullYear()
+  //   return `${y}-${y + 1}`
+  // }
   const getCurrentAcademicYear = () => {
-    const y = new Date().getFullYear()
-    return `${y}-${y + 1}`
-  }
+  const year = new Date().getFullYear()
+  return `${year - 3}-${year}`
+}
 
 
 
