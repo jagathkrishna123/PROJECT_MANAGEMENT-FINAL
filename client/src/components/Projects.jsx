@@ -40,6 +40,8 @@ const Projects = () => {
 
         const searchLower = searchTerm.toLowerCase();
 
+
+
         return (
             groupName.toLowerCase().includes(searchLower) ||
             topicName.toLowerCase().includes(searchLower) ||
@@ -167,7 +169,7 @@ const Projects = () => {
 
                                             {/* Download Button */}
                                             <a
-                                                href={`http://localhost:5000/${project.submittedFileName}`}
+                                                href={`http://localhost:5000/${project.submittedFilePath}`}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-lg transition-all duration-300 shadow-md hover:shadow-lg"
