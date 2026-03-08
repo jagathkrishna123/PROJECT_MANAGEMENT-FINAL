@@ -63,6 +63,12 @@ const studentSchema = new mongoose.Schema(
       default: "First Year",
     },
 
+    academicYear: {
+      type: String,
+      default: "",
+      trim: true
+    },
+
     status: {
       type: String,
       enum: ["Active", "Inactive", "Graduated"],

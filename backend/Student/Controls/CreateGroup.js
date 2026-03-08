@@ -171,6 +171,7 @@ export const EditGroup = async (req, res) => {
 
 
     const groupName = name
+    const incomingMembers = req.body.selectedMembers || req.body.members;
     const updates = {};
 
     // ✅ Check duplicate group name
@@ -192,6 +193,44 @@ export const EditGroup = async (req, res) => {
 
     if (topicName) {
       updates.topicName = topicName;
+    }
+
+    if (incomingMembers && incomingMembers.length > 0) {
+      // Normalize members
+      const selectedMembers = incomingMembers
+        .map(m => ({
+          _id: m._id || m.id,
+          name: m.name,
+          email: m.email
+        }))
+        .filter(m => m._id);
+
+      // Validate ObjectIds for members
+      const invalidMember = selectedMembers.find(
+        m => !mongoose.Types.ObjectId.isValid(m._id)
+      );
+
+      if (invalidMember) {
+        return res.status(400).json({
+          success: false,
+          message: `Invalid member id: ${invalidMember._id}`
+        });
+      }
+
+      // Check students exist
+      const memberIds = selectedMembers.map(m => m._id);
+      const students = await Student.find({
+        _id: { $in: memberIds }
+      });
+
+      if (students.length !== memberIds.length) {
+        return res.status(400).json({
+          success: false,
+          message: "Some students not found"
+        });
+      }
+
+      updates.selectedMembers = selectedMembers;
     }
 
     // nothing to update
@@ -238,7 +277,7 @@ export const assignGroup = async (req, res) => {
     const groupId = notificationId
 
     const guide = await Guide.findById(guideId);
-    console.log(guide, "guide");  
+    console.log(guide, "guide");
 
     // ✅ Validation
     if (!groupId || !guideId) {
@@ -299,11 +338,29 @@ export const rejectGroup = async (req, res) => {
     }
 
     // ✅ Add guideId into rejectedTeachers array (no duplicates)
+    // ✅ If the teacher rejecting is the one currently assigned, reset assignment and status
+    const group = await Group.findById(groupId);
+    if (!group) {
+      return res.status(404).json({
+        success: false,
+        message: "Group not found"
+      });
+    }
+
+    const updates = {
+      $addToSet: { rejectedTeachers: guideId }
+    };
+
+    // If this guide was already accepted/assigned, reset the group
+    if (group.teacherId && group.teacherId.toString() === guideId) {
+      updates.teacherId = null;
+      updates.teacherName = "";
+      updates.status = "Pending acceptance";
+    }
+
     const updatedGroup = await Group.findByIdAndUpdate(
       groupId,
-      {
-        $addToSet: { rejectedTeachers: guideId }
-      },
+      updates,
       { new: true }
     );
 

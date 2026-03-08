@@ -18,7 +18,7 @@ const requireAdmin = (req, res) => {
 export const addStudent = async (req, res) => {
   if (!requireAdmin(req, res)) return;
 
-  const { name, email, username, department, rollNo, status } = req.body;
+  const { name, email, username, department, rollNo, status, academicYear } = req.body;
 
 
 
@@ -43,7 +43,7 @@ export const addStudent = async (req, res) => {
     }
 
 
-    const student = new Student({ name, email, username, department, rollNo, status });
+    const student = new Student({ name, email, username, department, rollNo, status, academicYear });
     const savedStudent = await student.save();
 
     res.status(201).json(savedStudent);
@@ -59,7 +59,7 @@ export const editStudent = async (req, res) => {
 
 
   const { id } = req.params;
-  const { name, email, username, department, rollNo, status } = req.body;
+  const { name, email, username, department, rollNo, status, academicYear } = req.body;
 
   try {
 
@@ -110,6 +110,11 @@ export const editStudent = async (req, res) => {
     // ✅ Department validation
     if (department !== undefined) {
       updateFields.department = department;
+    }
+
+    // ✅ Academic Year
+    if (academicYear !== undefined) {
+      updateFields.academicYear = academicYear;
     }
 
     // ✅ Status validation

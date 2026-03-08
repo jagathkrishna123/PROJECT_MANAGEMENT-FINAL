@@ -52,9 +52,9 @@ export const AdminProvider = ({ children }) => {
   //   return `${y}-${y + 1}`
   // }
   const getCurrentAcademicYear = () => {
-  const year = new Date().getFullYear()
-  return `${year - 3}-${year}`
-}
+    const year = new Date().getFullYear()
+    return `${year - 3}-${year}`
+  }
 
 
 
@@ -613,6 +613,30 @@ export const AdminProvider = ({ children }) => {
     }
   };
 
+  const rejectAcceptedGroup = async (id) => {
+    try {
+      const res = await axios.put(
+        `/rejectGroup/${id}`,
+        {},
+        {
+          withCredentials: true
+        }
+      );
+
+      if (res.data.success) {
+        // Refresh the guides project groups list
+        fetchGuideProjectGroups();
+        // Also refresh general project groups if needed
+        const res2 = await axios.get("/getGroup", { withCredentials: true });
+        if (res2.data.success) setProjectGroups(res2.data.data);
+      }
+      return res.data;
+    } catch (error) {
+      console.error("Error rejecting accepted group:", error);
+      throw error;
+    }
+  };
+
   const acceptGroupNotification = async (notificationId, groupId, guideId) => {
     try {
       // 👉 Call backend API
@@ -923,6 +947,7 @@ export const AdminProvider = ({ children }) => {
     guides,
     projectGroups,
     GuideprojectGroups,
+    fetchGuideProjectGroups,
     notifications,
     tasks,
     profiles,
@@ -948,6 +973,7 @@ export const AdminProvider = ({ children }) => {
     deleteProjectGroup,
     addNotification,
     removeNotification,
+    rejectAcceptedGroup,
     acceptGroupNotification,
     addTask,
     updateTask,

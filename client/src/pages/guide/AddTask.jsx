@@ -253,7 +253,7 @@ const AddTask = () => {
             <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Task Management</h1>
             <p className="text-gray-600 text-base mt-1">Assign deadlines, review submissions & publish marks</p>
           </div>
-          <div className="bg-white border border-gray-300 rounded-2xl px-5 py-4 text-right shadow-sm">
+          <div className="flex items-center gap-4 bg-white border border-gray-300 rounded-2xl px-5 py-4 text-right shadow-sm">
             <p className="text-gray-600 text-xs font-bold uppercase tracking-widest mb-1">Groups</p>
             <p className="text-blue-700 text-2xl font-extrabold">{supervisedGroups.length}</p>
           </div>
@@ -403,9 +403,11 @@ const AddTask = () => {
                     <StatusBadge status={finalReportTask.status} />
                   </div>
                   <a
-                    href={`http://localhost:5000/${finalReportTask.submittedFileName}`}
-                    target="_blank" rel="noopener noreferrer"
+                    href={`http://localhost:5000/${finalReportTask.submittedFilePath}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold bg-blue-100 text-blue-800 border border-blue-300 hover:bg-blue-200 transition-colors"
+
                   >
                     <FaFileAlt className="w-3 h-3" /> Download Report
                   </a>

@@ -320,11 +320,12 @@ export const NotificationProvider = ({ children }) => {
 
       // ✅ Add new notification to state after DB success
       if (res.data.success) {
-        setNotifications(prev => [res.data.data, ...prev]);
+        const newNotification = res.data.notification || res.data.data;
+        setNotifications(prev => [newNotification, ...prev]);
+        return newNotification;
       }
 
-      return res.data.data;
-
+      return null;
     } catch (error) {
       console.error(
         "Send Message Error:",

@@ -356,7 +356,7 @@ const Group = () => {
   const [availableStudents, setAvailableStudents] = useState([])
   const [error, setError] = useState('')
   const [showCreateGroupModal, setShowCreateGroupModal] = useState(false)
-  const [isEditing, setIsEditing] = useState(false)
+  const [isUpdating, setIsUpdating] = useState(false)
   const [editGroupName, setEditGroupName] = useState('')
   const [editTopicName, setEditTopicName] = useState('')
 
@@ -375,21 +375,21 @@ const Group = () => {
         })
       })
 
+      const existingUserGroup = projectGroups.find(group =>
+        group.selectedMembers.some(member => member._id === parsedUser.id)
+      )
+
       const departmentStudents = students.filter(
         (s) => s.department === department &&
           s._id !== parsedUser.id &&
-          !studentsInGroups.has(s._id)
+          (!studentsInGroups.has(s._id) || existingUserGroup?.selectedMembers.some(m => m._id === s._id))
       )
 
       setAvailableStudents(departmentStudents)
 
-      const foundGroup = projectGroups.find(group =>
-        group.selectedMembers.some(member => member._id === parsedUser.id)
-      )
-
-      setUserGroup(foundGroup)
-      if (foundGroup?.teacherName) {
-        const guide = guides.find(g => g.username === foundGroup.teacherName)
+      setUserGroup(existingUserGroup)
+      if (existingUserGroup?.teacherName) {
+        const guide = guides.find(g => g.username === existingUserGroup.teacherName)
         setAssignedGuide(guide || null)
       } else {
         setAssignedGuide(null)
@@ -417,32 +417,37 @@ const Group = () => {
     if (selectedMembers.length < 1) return setError('Please select at least one member.')
 
     const allMembers = [currentUser, ...selectedMembers]
-    const newGroup = createProjectGroup(groupName, allMembers, topicName)
-    setUserGroup(newGroup)
+
+    if (isUpdating) {
+      updateProjectGroup(userGroup._id, {
+        name: groupName,
+        topicName: topicName,
+        selectedMembers: allMembers
+      })
+      alert('Group updated successfully!')
+    } else {
+      const newGroup = createProjectGroup(groupName, allMembers, topicName)
+      setUserGroup(newGroup)
+      alert('Project group created successfully!')
+    }
+
     setShowCreateGroupModal(false)
+    setIsUpdating(false)
     setGroupName('')
     setTopicName('')
     setSelectedMembers([])
-    alert('Project group created successfully!')
   }
 
   const handleEditToggle = () => {
     if (userGroup) {
-      setEditGroupName(userGroup.groupName)
-      setEditTopicName(userGroup.topicName || '')
-      setIsEditing(true)
+      setGroupName(userGroup.groupName)
+      setTopicName(userGroup.topicName || '')
+      // Filter out current user from selected members state as they are handled separately
+      const otherMembers = userGroup.selectedMembers.filter(m => m._id !== currentUser.id)
+      setSelectedMembers(otherMembers)
+      setIsUpdating(true)
+      setShowCreateGroupModal(true)
     }
-  }
-
-  const handleCancelEdit = () => { setIsEditing(false); setError('') }
-
-  const handleSaveEdit = () => {
-    if (!editGroupName.trim()) return setError('Group name cannot be empty.')
-    if (!editTopicName.trim()) return setError('Topic name cannot be empty.')
-    updateProjectGroup(userGroup._id, { name: editGroupName, topicName: editTopicName })
-    setIsEditing(false)
-    setError('')
-    alert('Group details updated successfully!')
   }
 
   const initials = (name) => name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || '?'
@@ -496,63 +501,19 @@ const Group = () => {
                     {/* "Your Group" label — white on colored bg, readable */}
                     <p className="text-xs font-semibold text-white/80 uppercase tracking-wider">Your Group</p>
                     <h2 className="text-lg font-bold text-white leading-tight">
-                      {isEditing ? editGroupName || 'Editing...' : userGroup.groupName}
+                      {userGroup.groupName}
                     </h2>
                   </div>
                 </div>
 
-                {!isEditing && (
-                  <button
-                    onClick={handleEditToggle}
-                    className="flex items-center gap-1.5 text-xs font-semibold text-white bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-lg transition-colors"
-                  >
-                    <FaEdit className="w-3 h-3" /> Edit
-                  </button>
-                )}
+                <button
+                  onClick={handleEditToggle}
+                  className="flex items-center gap-1.5 text-xs font-semibold text-white bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-lg transition-colors"
+                >
+                  <FaEdit className="w-3 h-3" /> Edit Group
+                </button>
               </div>
 
-              {/* Edit Form */}
-              {isEditing && (
-                <div className="px-6 pt-5 pb-4 border-b border-slate-200 bg-blue-50/40">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1.5 uppercase tracking-wide">Group Name</label>
-                      <input
-                        type="text"
-                        value={editGroupName}
-                        onChange={(e) => setEditGroupName(e.target.value)}
-                        className="w-full px-3 py-2.5 text-sm text-slate-800 border border-blue-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-slate-700 mb-1.5 uppercase tracking-wide">Topic Name</label>
-                      <input
-                        type="text"
-                        value={editTopicName}
-                        onChange={(e) => setEditTopicName(e.target.value)}
-                        className="w-full px-3 py-2.5 text-sm text-slate-800 border border-blue-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
-                      />
-                    </div>
-                  </div>
-                  {error && (
-                    <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3">{error}</p>
-                  )}
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleSaveEdit}
-                      className="flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors shadow-sm"
-                    >
-                      <FaSave className="w-3.5 h-3.5" /> Save Changes
-                    </button>
-                    <button
-                      onClick={handleCancelEdit}
-                      className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 text-sm font-semibold px-4 py-2 rounded-xl border border-slate-200 transition-colors"
-                    >
-                      <FaTimes className="w-3.5 h-3.5" /> Cancel
-                    </button>
-                  </div>
-                </div>
-              )}
 
               {/* Info Grid */}
               <div className="px-6 py-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -659,10 +620,10 @@ const Group = () => {
               <div className="bg-gradient-to-r from-blue-600 to-sky-500 px-6 py-4 flex items-center justify-between">
                 <div className="flex items-center gap-2.5">
                   <FaUsers className="text-white w-4 h-4" />
-                  <h3 className="text-base font-bold text-white">Create Project Group</h3>
+                  <h3 className="text-base font-bold text-white">{isUpdating ? 'Edit Project Group' : 'Create Project Group'}</h3>
                 </div>
                 <button
-                  onClick={() => { setShowCreateGroupModal(false); setGroupName(''); setTopicName(''); setSelectedMembers([]); setError('') }}
+                  onClick={() => { setShowCreateGroupModal(false); setGroupName(''); setTopicName(''); setSelectedMembers([]); setError(''); setIsUpdating(false) }}
                   className="w-7 h-7 rounded-lg bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
                 >
                   <FaTimes className="text-white w-3 h-3" />
@@ -748,7 +709,7 @@ const Group = () => {
                 <div className="flex gap-2 pt-1">
                   <button
                     type="button"
-                    onClick={() => { setShowCreateGroupModal(false); setGroupName(''); setTopicName(''); setSelectedMembers([]); setError('') }}
+                    onClick={() => { setShowCreateGroupModal(false); setGroupName(''); setTopicName(''); setSelectedMembers([]); setError(''); setIsUpdating(false) }}
                     className="flex-1 py-2.5 text-sm font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
                   >
                     Cancel
@@ -757,7 +718,7 @@ const Group = () => {
                     type="submit"
                     className="flex-1 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-sky-500 hover:opacity-95 rounded-xl shadow-md shadow-blue-500/20 transition-all"
                   >
-                    Create Group
+                    {isUpdating ? 'Save Changes' : 'Create Group'}
                   </button>
                 </div>
               </form>

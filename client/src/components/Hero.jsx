@@ -94,12 +94,7 @@ const testimonials = [
   }
 ]
 
-const stats = [
-  { value: '10K+', label: 'Active Students' },
-  { value: '340+', label: 'Universities' },
-  { value: '98%', label: 'On-time Submissions' },
-  { value: '4.9★', label: 'Average Rating' },
-]
+
 
 // ─── Subcomponents ────────────────────────────────────────────────────────────
 const FeatureCard = ({ feature, index }) => (
@@ -114,19 +109,7 @@ const FeatureCard = ({ feature, index }) => (
   </div>
 )
 
-const TestimonialCard = ({ t, active }) => (
-  <div className={`testimonial-card ${active ? 'active' : ''}`}>
-    <div className="quote-mark">"</div>
-    <p className="testimonial-text">{t.text}</p>
-    <div className="testimonial-author">
-      <img src={t.avatar} alt={t.name} className="testimonial-avatar" />
-      <div>
-        <div className="testimonial-name">{t.name}</div>
-        <div className="testimonial-role">{t.role}</div>
-      </div>
-    </div>
-  </div>
-)
+
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
@@ -152,17 +135,28 @@ const Hero = () => {
     <>
       {/* ─── Navbar ─── */}
       <nav className={`navbar ${scrolled ? 'scrolled' : ''}`}>
-        <a href="/" className="nav-logo">
-          <div className="logo-mark">
-            <img src={CAPSLOGO} alt="CAPSTONE" /></div>
-          <span className='font-lobster text-blue-600 text-3xl'>CAPSTONE</span>
-        </a>
+        <a href="/" className="nav-logo flex items-center gap-3">
+  
+  {/* Logo Image */}
+  <div className="w-10 h-10 flex items-center justify-center">
+    <img
+      src={CAPSLOGO}
+      alt="CAPSTONE"
+      className="w-full h-full object-contain"
+    />
+  </div>
+
+  {/* Logo Text */}
+  <span className="font-lobster text-blue-600 text-3xl tracking-wide">
+    CAPSTONE
+  </span>
+
+</a>
 
         <div className="nav-links">
           <a href="#">Home</a>
           <a href="#features">Features</a>
           <a href="#how-it-works">How It Works</a>
-          <a href="#testimonials">Testimonials</a>
         </div>
 
         <div className="nav-actions">
@@ -222,61 +216,8 @@ const Hero = () => {
           </div>
 
           {/* Dashboard mockup */}
-          <div className="dashboard-preview fade-up" style={{ animationDelay: '450ms' }}>
-            <div className="preview-bar">
-              <span /><span /><span />
-              <div className="preview-bar-title">Capstone Dashboard</div>
-            </div>
-            <div className="preview-body">
-              <div className="preview-sidebar">
-                {['Dashboard', 'My Projects', 'Reviews', 'Documents', 'Reports'].map((item, i) => (
-                  <div key={i} className={`sidebar-item ${i === 0 ? 'active' : ''}`}>{item}</div>
-                ))}
-              </div>
-              <div className="preview-main">
-                <div className="preview-stats-row">
-                  {[
-                    { label: 'Active Projects', val: '24', color: '#2563eb' },
-                    { label: 'Pending Reviews', val: '7', color: '#f59e0b' },
-                    { label: 'Submitted Today', val: '12', color: '#10b981' },
-                  ].map((s, i) => (
-                    <div key={i} className="preview-stat" style={{ borderTop: `3px solid ${s.color}` }}>
-                      <div className="preview-stat-val" style={{ color: s.color }}>{s.val}</div>
-                      <div className="preview-stat-label">{s.label}</div>
-                    </div>
-                  ))}
-                </div>
-                <div className="preview-table-label">Recent Submissions</div>
-                <div className="preview-table">
-                  {[
-                    { name: 'AI Traffic Management', stage: 'Proposal', status: 'Approved', color: '#10b981' },
-                    { name: 'Blockchain Voting App', stage: 'Development', status: 'In Review', color: '#f59e0b' },
-                    { name: 'Medical IoT System', stage: 'Testing', status: 'Pending', color: '#6366f1' },
-                    { name: 'NLP Chat Assistant', stage: 'Final', status: 'Graded', color: '#2563eb' },
-                  ].map((row, i) => (
-                    <div key={i} className="preview-row">
-                      <div className="preview-proj-name">{row.name}</div>
-                      <div className="preview-stage">{row.stage}</div>
-                      <div className="preview-badge" style={{ background: `${row.color}20`, color: row.color }}>{row.status}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </section>
-
-      {/* ─── Stats Band ─── */}
-      <section className="stats-band">
-        {stats.map((s, i) => (
-          <div key={i} className="stat-item">
-            <div className="stat-value">{s.value}</div>
-            <div className="stat-label">{s.label}</div>
-          </div>
-        ))}
-      </section>
-
       {/* ─── Features ─── */}
       <section className="section" id="features">
         <div className="section-inner">
@@ -311,27 +252,6 @@ const Hero = () => {
           </div>
         </div>
       </section>
-
-      {/* ─── Testimonials ─── */}
-      <section className="section" id="testimonials">
-        <div className="section-inner">
-          <div className="section-label">Social Proof</div>
-          <h2 className="section-heading">What our users say</h2>
-          <p className="section-sub">Coordinators, supervisors, and students across 340+ institutions rely on Capstone daily.</p>
-          <div className="testimonials-track">
-            {testimonials.map((t, i) => (
-              <TestimonialCard key={i} t={t} active={i === activeTestimonial} />
-            ))}
-          </div>
-          <div className="testimonial-dots">
-            {testimonials.map((_, i) => (
-              <button key={i} className={`dot ${i === activeTestimonial ? 'active' : ''}`}
-                onClick={() => setActiveTestimonial(i)} />
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ─── CTA Banner ─── */}
       <section className="cta-section" id="cta">
         <div className="cta-blob-1" />
@@ -421,7 +341,7 @@ const Hero = () => {
           --text: #0f172a;
           --text-muted: #64748b;
           --surface: #f8fafc;
-          --border: #e2e8f0;
+          --border: #8da4c2ff;
           --white: #ffffff;
           --radius: 16px;
           --shadow: 0 4px 24px rgba(37,99,235,0.08);
@@ -457,12 +377,39 @@ const Hero = () => {
           display: flex; align-items: center; justify-content: center;
         }
         .logo-mark.sm { width: 30px; height: 30px; font-size: 14px; border-radius: 8px; }
-        .nav-links { display: flex; gap: 32px; }
-        .nav-links a {
-          font-size: 14px; font-weight: 500; color: var(--text-muted);
-          text-decoration: none; transition: color .2s;
-        }
-        .nav-links a:hover { color: var(--blue); }
+        .nav-links {
+  display: flex;
+  gap: 34px;
+  align-items: center;
+}
+
+.nav-links a {
+  position: relative;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-decoration: none;
+  padding: 6px 0;
+  transition: color 0.25s ease;
+}
+.nav-links a::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 0;
+  height: 2px;
+  background-color: var(--blue);
+  transition: width 0.25s ease;
+}
+
+.nav-links a:hover {
+  color: var(--blue);
+}
+
+.nav-links a:hover::after {
+  width: 100%;
+}
         .nav-actions { display: flex; gap: 10px; align-items: center; }
         .hamburger { display: none; flex-direction: column; gap: 5px; background: none; border: none; cursor: pointer; padding: 4px; }
         .hamburger span { display: block; width: 24px; height: 2px; background: var(--text); border-radius: 2px; transition: .3s; }
@@ -510,6 +457,7 @@ const Hero = () => {
         .btn-ghost:hover { color: var(--text); background: var(--surface); }
         .btn-outline {
           display: inline-flex; align-items: center; gap: 8px;
+          border: 1.5px solid #2563eb;
           background: transparent; color: var(--text); padding: 12px 24px;
           border-radius: 100px; font-weight: 600; font-size: 14px;
           text-decoration: none; border: 1.5px solid var(--border); cursor: pointer;
@@ -536,21 +484,26 @@ const Hero = () => {
         .btn-outline-white:hover { background: rgba(255,255,255,0.12); transform: translateY(-1px); }
 
         /* ── Hero ── */
-        .hero-section {
-          min-height: 100vh; position: relative; overflow: hidden;
-          display: flex; align-items: center; padding-top: 100px; padding-bottom: 60px;
-          background: #fafbff;
-        }
+       .hero-section {
+  min-height: 100vh;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  padding-top: 100px;
+  padding-bottom: 60px;
+
+background: #ffffffff;}
         .blob {
           position: absolute; border-radius: 50%; filter: blur(80px); pointer-events: none;
         }
-        .blob-1 { width: 600px; height: 600px; background: #bfdbfe; opacity: 0.35; top: -100px; left: -150px; }
-        .blob-2 { width: 500px; height: 500px; background: #c7d2fe; opacity: 0.25; bottom: -50px; right: -100px; }
-        .blob-3 { width: 300px; height: 300px; background: #bae6fd; opacity: 0.2; top: 40%; left: 55%; }
+        .blob-1 { width: 600px; height: 600px; background: #f8f8f8ff; opacity: 0.35; top: -100px; left: -150px; }
+        .blob-2 { width: 500px; height: 500px; background: #fefefeff; opacity: 0.25; bottom: -50px; right: -100px; }
+        .blob-3 { width: 300px; height: 300px; background: #ffffffff; opacity: 0.2; top: 40%; left: 55%; }
         .grid-overlay {
           position: absolute; inset: 0; pointer-events: none;
           background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
-          background-size: 60px 60px; opacity: 0.35;
+          background-size: 6px 6px; opacity: 0.25;
           -webkit-mask-image: radial-gradient(ellipse at center, black 20%, transparent 75%);
           mask-image: radial-gradient(ellipse at center, black 20%, transparent 75%);
         }
@@ -754,7 +707,7 @@ const Hero = () => {
         /* ── CTA Section ── */
         .cta-section {
           position: relative; overflow: hidden;
-          background: linear-gradient(135deg, #1e40af 0%, #2563eb 50%, #7c3aed 100%);
+          background: linear-gradient(135deg, #1e40af 0%, #0c3faeff 50%, #7c3aed 100%);
           padding: 100px 40px; text-align: center; color: white;
         }
           .footer-logo {

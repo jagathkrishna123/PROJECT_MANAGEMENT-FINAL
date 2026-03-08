@@ -32,9 +32,9 @@ const StudentManagement = () => {
   }
 
   const editStudent = (student) => {
- 
-    
-    setEditingStudent( student)
+
+
+    setEditingStudent(student)
     setStudentForm({
       name: student.name,
       email: student.email,
@@ -153,15 +153,14 @@ const StudentManagement = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{student.email}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{student.department}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{student.rollNo}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{student.academicYear}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{student.academicYear || getCurrentAcademicYear()}</td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <button
                         onClick={() => toggleStudentStatus(student.id)}
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          student.status === 'Active'
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${student.status === 'Active'
                             ? 'bg-green-100 text-green-800 hover:bg-green-200'
                             : 'bg-red-100 text-red-800 hover:bg-red-200'
-                        }`}
+                          }`}
                       >
                         {student.status}
                       </button>
@@ -169,7 +168,7 @@ const StudentManagement = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                       <div className="flex gap-2">
                         <button
-                          onClick={() => editStudent( student)}
+                          onClick={() => editStudent(student)}
                           className="text-blue-500 hover:text-blue-700"
                           title="Edit Student"
                         >

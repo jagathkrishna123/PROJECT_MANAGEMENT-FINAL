@@ -1,3 +1,356 @@
+// import React, { useEffect, useState } from 'react'
+// import { FiSend, FiUsers, FiUser, FiBookOpen, FiBell } from 'react-icons/fi'
+// import { useNotifications } from '../../contexts/NotificationContext'
+// import { useAdmin } from '../../contexts/AdminContext'
+
+// const Notifications = () => {
+//   const {
+//     sendToAllTeachers,
+//     sendToSpecificTeachers,
+//     sendToAllStudents,
+//     sendToSpecificStudents,
+//     // teacherNotifications,
+//     // studentNotifications
+//     Notifications
+//   } = useNotifications()
+
+//   const { students, guides } = useAdmin()
+
+
+
+//   const [notificationType, setNotificationType] = useState('all-teachers')
+//   const [title, setTitle] = useState('')
+//   const [message, setMessage] = useState('')
+//   const [selectedRecipients, setSelectedRecipients] = useState([])
+//   const [showRecipientSelector, setShowRecipientSelector] = useState(false)
+//   const [isLoading, setIsLoading] = useState(false)
+//   const [teacherId, setTeacherId] = useState()
+//   const [studentId, setStudentId] = useState()
+//   // console.log(teacherId, "teacherid");
+//   // console.log(studentId, "studentid");
+//   // console.log(notificationType, "tyo");
+//   // console.log(selectedRecipients, "Slele");
+
+//   console.log(teacherId, "teacher Id 12");
+
+
+
+//   useEffect(() => {
+//     if (!selectedRecipients?.length) {
+//       setTeacherId([]);
+//       setStudentId([]);
+//       return;
+//     }
+
+//     const guides = [];
+//     const students = [];
+
+//     selectedRecipients.forEach(item => {
+//       if (item.role === "Guide") {
+//         guides.push(item._id);
+//       } else if (item.role === "Student") {
+//         students.push(item._id);
+//       }
+//     });
+
+//     setTeacherId(guides);
+//     setStudentId(students);
+
+//   }, [selectedRecipients]);
+
+
+
+
+
+
+//   // Combine notifications from both contexts
+//   const notifications = [...Notifications].sort((a, b) => {
+//     const timeA = new Date(a.createdAt || a.timestamp || 0).getTime();
+//     const timeB = new Date(b.createdAt || b.timestamp || 0).getTime();
+//     return timeB - timeA;
+//   });
+
+
+//   const handleNotificationTypeChange = (type) => {
+//     setNotificationType(type)
+//     setSelectedRecipients([])
+//     setShowRecipientSelector(type.includes('specific'))
+//   }
+
+//   const handleRecipientToggle = (recipient) => {
+//     setSelectedRecipients(prev =>
+//       prev.find(item => item._id === recipient._id)
+//         ? prev.filter(item => item._id !== recipient._id)
+//         : [...prev, recipient]
+//     )
+//   }
+
+//   const handleSendNotification = async () => {
+
+
+//     if (!title.trim() || !message.trim()) {
+//       alert('Please fill in both title and message')
+//       return
+//     }
+
+//     if (notificationType.includes('specific') && selectedRecipients.length === 0) {
+//       alert('Please select at least one recipient')
+//       return
+//     }
+
+//     setIsLoading(true)
+
+//     try {
+//       // Simulate API delay
+//       await new Promise(resolve => setTimeout(resolve, 1000))
+//       const target = notificationType;
+//       // Send notification using context methods
+//       let newNotification
+//       switch (target) {
+//         case 'specific-teachers':
+//           newNotification = sendToSpecificTeachers(title.trim(), message.trim(), teacherId);
+//           break;
+//         case 'all-students':
+//           newNotification = sendToAllStudents(title.trim(), message.trim());
+//           break;
+//         case 'all-teachers':
+//           newNotification = sendToAllTeachers(title.trim(), message.trim());
+//           break;
+//         case 'specific-students':
+//           newNotification = sendToSpecificStudents(title.trim(), message.trim(), studentId);
+//           break;
+//         default:
+//           console.warn("Unknown notification target:", target);
+//       }
+
+
+//       // Reset form
+//       setTitle('')
+//       setMessage('')
+//       setSelectedRecipients([])
+//       setShowRecipientSelector(false)
+//       setNotificationType('all-teachers')
+
+//       alert(`Notification sent successfully to ${getRecipientsLabel()}!`)
+//     } catch (error) {
+//       console.log(error);
+
+//       alert('Failed to send notification. Please try again.')
+//     } finally {
+//       setIsLoading(false)
+//     }
+//   }
+
+//   const getRecipientsLabel = () => {
+//     switch (notificationType) {
+//       case 'all-teachers':
+//         return 'All Teachers'
+//       case 'all-students':
+//         return 'All Students'
+//       case 'specific-teachers':
+//         return `Selected Teachers (${selectedRecipients.length})`
+//       case 'specific-students':
+//         return `Selected Students (${selectedRecipients.length})`
+//       default:
+//         return ''
+//     }
+//   }
+
+//   const getRecipientsList = () => {
+//     return notificationType.includes('teachers') ? guides : students
+//   }
+
+//   const formatTimestamp = (timestamp) => {
+//     if (!timestamp) return 'Unknown';
+//     const date = new Date(timestamp);
+//     if (isNaN(date.getTime())) return 'Unknown';
+//     const now = new Date();
+//     const diff = now - date;
+//     const minutes = Math.floor(diff / (1000 * 60))
+//     const hours = Math.floor(diff / (1000 * 60 * 60))
+//     const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+
+//     if (minutes < 1) return 'Just now'
+//     if (minutes < 60) return `${minutes}m ago`
+//     if (hours < 24) return `${hours}h ago`
+//     return `${days}d ago`
+//   }
+
+//   return (
+//     <div className="max-w-7xl mx-auto p-6 space-y-8">
+//       {/* Header */}
+//       <div className="bg-white rounded-2xl shadow-lg border border-slate-200/60 p-8">
+//         <div className="flex items-center space-x-4 mb-6">
+//           <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center">
+//             <FiBell className="w-6 h-6 text-white" />
+//           </div>
+//           <div>
+//             <h1 className="text-3xl font-bold text-slate-900">Notifications</h1>
+//             <p className="text-slate-600">Send notifications to teachers and students</p>
+//           </div>
+//         </div>
+
+//         {/* Send Notification Form */}
+//         <div className="bg-slate-50/50 rounded-xl p-6 border border-slate-200/40">
+//           <h2 className="text-xl font-semibold text-slate-900 mb-6 flex items-center">
+//             <FiSend className="w-5 h-5 mr-2" />
+//             Send New Notification
+//           </h2>
+
+//           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+//             {/* Notification Type */}
+//             <div>
+//               <label className="block text-sm font-medium text-slate-700 mb-3">Recipient Type</label>
+//               <div className="grid grid-cols-2 gap-3">
+//                 {[
+//                   { value: 'all-teachers', label: 'All Teachers', icon: FiUsers },
+//                   { value: 'specific-teachers', label: 'Specific Teachers', icon: FiUser },
+//                   { value: 'all-students', label: 'All Students', icon: FiUsers },
+//                   { value: 'specific-students', label: 'Specific Students', icon: FiUser }
+//                 ].map((option) => (
+//                   <button
+//                     key={option.value}
+//                     onClick={() => handleNotificationTypeChange(option.value)}
+//                     className={`p-4 rounded-xl border-2 transition-all duration-200 ${notificationType === option.value
+//                       ? 'border-blue-500 bg-blue-50 text-blue-700'
+//                       : 'border-slate-200 hover:border-slate-300 text-slate-600'
+//                       }`}
+//                   >
+//                     <option.icon className="w-5 h-5 mx-auto mb-2" />
+//                     <span className="text-sm font-medium">{option.label}</span>
+//                   </button>
+//                 ))}
+//               </div>
+//             </div>
+
+//             {/* Recipient Selector */}
+//             {showRecipientSelector && (
+//               <div>
+//                 <label className="block text-sm font-medium text-slate-700 mb-3">
+//                   Select Recipients ({selectedRecipients.length} selected)
+//                 </label>
+//                 <div className="max-h-48 overflow-y-auto border border-slate-200 rounded-xl p-3 bg-white">
+//                   {getRecipientsList().map((recipient) => (
+//                     <label key={recipient._id} className="flex items-center space-x-3 p-2 hover:bg-slate-50 rounded-lg cursor-pointer">
+//                       <input
+//                         type="checkbox"
+//                         checked={selectedRecipients.some(item => item._id === recipient._id)}
+//                         onChange={() => handleRecipientToggle(recipient)}
+//                         className="w-4 h-4 text-blue-600 bg-slate-100 border-slate-300 rounded focus:ring-blue-500"
+//                       />
+//                       <div className="flex-1">
+//                         <span className="text-sm font-medium text-slate-900">{recipient.name}</span>
+//                         <span className="text-xs text-slate-500 block">
+//                           {notificationType.includes('teacher')
+//                             ? `${recipient.department} - ${recipient.specialization || 'Guide'}`
+//                             : `${recipient.rollNo} - ${recipient.department}`
+//                           }
+//                         </span>
+//                       </div>
+//                     </label>
+//                   ))}
+//                 </div>
+//               </div>
+//             )}
+//           </div>
+
+//           {/* Title Input */}
+//           <div className="mt-6">
+//             <label className="block text-sm font-medium text-slate-700 mb-2">Notification Title</label>
+//             <input
+//               type="text"
+//               value={title}
+//               onChange={(e) => setTitle(e.target.value)}
+//               placeholder="Enter notification title..."
+//               className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+//             />
+//           </div>
+
+//           {/* Message Input */}
+//           <div className="mt-4">
+//             <label className="block text-sm font-medium text-slate-700 mb-2">Message</label>
+//             <textarea
+//               value={message}
+//               onChange={(e) => setMessage(e.target.value)}
+//               placeholder="Enter your notification message..."
+//               rows={4}
+//               className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none"
+//             />
+//           </div>
+
+//           {/* Send Button */}
+//           <div className="mt-6 flex justify-end">
+//             <button
+//               onClick={handleSendNotification}
+//               disabled={isLoading}
+//               className="px-8 py-3 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white font-semibold rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+//             >
+//               {isLoading ? (
+//                 <div className="flex items-center">
+//                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+//                   Sending...
+//                 </div>
+//               ) : (
+//                 <div className="flex items-center">
+//                   <FiSend className="w-4 h-4 mr-2" />
+//                   Send Notification
+//                 </div>
+//               )}
+//             </button>
+//           </div>
+//         </div>
+//       </div>
+
+//       {/* Notification History */}
+//       <div className="bg-white rounded-2xl shadow-lg border border-slate-200/60 p-8">
+//         <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center">
+//           <FiBookOpen className="w-6 h-6 mr-3" />
+//           Notification History
+//         </h2>
+
+//         <div className="space-y-4">
+//           {notifications.length === 0 ? (
+//             <div className="text-center py-12 text-slate-500">
+//               <FiBell className="w-12 h-12 mx-auto mb-4 opacity-50" />
+//               <p>No notifications sent yet</p>
+//             </div>
+//           ) : (
+//             notifications.map((notification) => (
+//               <div key={notification._id} className="border border-slate-200 rounded-xl p-6 hover:shadow-md transition-shadow duration-200">
+//                 <div className="flex items-start justify-between">
+//                   <div className="flex-1">
+//                     <div className="flex items-center space-x-3 mb-2">
+//                       <h3 className="text-lg font-semibold text-slate-900">{notification.title}</h3>
+//                       <span className={`px-3 py-1 rounded-full text-xs font-medium ${(notification?.type || '').includes('teachers')
+//                         ? 'bg-purple-100 text-purple-700'
+//                         : 'bg-green-100 text-green-700'
+//                         }`}>
+//                         {notification.type || 'General'}
+//                       </span>
+//                     </div>
+//                     <p className="text-slate-600 mb-3">{notification.message}</p>
+//                     <p className="text-sm text-slate-500">
+//                       {formatTimestamp(notification.updatedAt || notification.createdAt || notification.timestamp)}
+//                     </p>
+
+//                   </div>
+//                   <div className="ml-4">
+//                     <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+//                       {notification.status}
+//                     </span>
+//                   </div>
+//                 </div>
+//               </div>
+//             ))
+//           )}
+//         </div>
+//       </div>
+//     </div>
+//   )
+// }
+
+// export default Notifications
+
 import React, { useEffect, useState } from 'react'
 import { FiSend, FiUsers, FiUser, FiBookOpen, FiBell } from 'react-icons/fi'
 import { useNotifications } from '../../contexts/NotificationContext'
@@ -177,30 +530,30 @@ const Notifications = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-6 space-y-8">
+    <div className="max-w-7xl mx-auto p-6 space-y-6 bg-gray-50 min-h-screen">
       {/* Header */}
-      <div className="bg-white rounded-2xl shadow-lg border border-slate-200/60 p-8">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
         <div className="flex items-center space-x-4 mb-6">
-          <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center">
+          <div className="w-12 h-12 bg-blue-600 rounded-lg flex items-center justify-center">
             <FiBell className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-slate-900">Notifications</h1>
-            <p className="text-slate-600">Send notifications to teachers and students</p>
+            <h1 className="text-2xl font-semibold text-gray-900">Notifications</h1>
+            <p className="text-gray-600 text-sm">Send notifications to teachers and students</p>
           </div>
         </div>
 
         {/* Send Notification Form */}
-        <div className="bg-slate-50/50 rounded-xl p-6 border border-slate-200/40">
-          <h2 className="text-xl font-semibold text-slate-900 mb-6 flex items-center">
-            <FiSend className="w-5 h-5 mr-2" />
+        <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+          <h2 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
+            <FiSend className="w-5 h-5 mr-2 text-blue-600" />
             Send New Notification
           </h2>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Notification Type */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-3">Recipient Type</label>
+              <label className="block text-sm font-medium text-gray-700 mb-3">Recipient Type</label>
               <div className="grid grid-cols-2 gap-3">
                 {[
                   { value: 'all-teachers', label: 'All Teachers', icon: FiUsers },
@@ -211,10 +564,11 @@ const Notifications = () => {
                   <button
                     key={option.value}
                     onClick={() => handleNotificationTypeChange(option.value)}
-                    className={`p-4 rounded-xl border-2 transition-all duration-200 ${notificationType === option.value
-                      ? 'border-blue-500 bg-blue-50 text-blue-700'
-                      : 'border-slate-200 hover:border-slate-300 text-slate-600'
-                      }`}
+                    className={`p-4 rounded-lg border-2 transition-all ${
+                      notificationType === option.value
+                        ? 'border-blue-600 bg-blue-50 text-blue-700'
+                        : 'border-gray-300 bg-white hover:border-gray-400 text-gray-700'
+                    }`}
                   >
                     <option.icon className="w-5 h-5 mx-auto mb-2" />
                     <span className="text-sm font-medium">{option.label}</span>
@@ -226,21 +580,27 @@ const Notifications = () => {
             {/* Recipient Selector */}
             {showRecipientSelector && (
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-3">
-                  Select Recipients ({selectedRecipients.length} selected)
+                <label className="block text-sm font-medium text-gray-700 mb-3">
+                  Select Recipients 
+                  <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs font-medium">
+                    {selectedRecipients.length} selected
+                  </span>
                 </label>
-                <div className="max-h-48 overflow-y-auto border border-slate-200 rounded-xl p-3 bg-white">
+                <div className="max-h-48 overflow-y-auto border border-gray-300 rounded-lg p-3 bg-white">
                   {getRecipientsList().map((recipient) => (
-                    <label key={recipient._id} className="flex items-center space-x-3 p-2 hover:bg-slate-50 rounded-lg cursor-pointer">
+                    <label 
+                      key={recipient._id} 
+                      className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded-md cursor-pointer"
+                    >
                       <input
                         type="checkbox"
                         checked={selectedRecipients.some(item => item._id === recipient._id)}
                         onChange={() => handleRecipientToggle(recipient)}
-                        className="w-4 h-4 text-blue-600 bg-slate-100 border-slate-300 rounded focus:ring-blue-500"
+                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
                       />
                       <div className="flex-1">
-                        <span className="text-sm font-medium text-slate-900">{recipient.name}</span>
-                        <span className="text-xs text-slate-500 block">
+                        <span className="text-sm font-medium text-gray-900">{recipient.name}</span>
+                        <span className="text-xs text-gray-500 block">
                           {notificationType.includes('teacher')
                             ? `${recipient.department} - ${recipient.specialization || 'Guide'}`
                             : `${recipient.rollNo} - ${recipient.department}`
@@ -256,25 +616,25 @@ const Notifications = () => {
 
           {/* Title Input */}
           <div className="mt-6">
-            <label className="block text-sm font-medium text-slate-700 mb-2">Notification Title</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Notification Title</label>
             <input
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Enter notification title..."
-              className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
 
           {/* Message Input */}
           <div className="mt-4">
-            <label className="block text-sm font-medium text-slate-700 mb-2">Message</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Message</label>
             <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Enter your notification message..."
               rows={4}
-              className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none"
+              className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
             />
           </div>
 
@@ -283,7 +643,7 @@ const Notifications = () => {
             <button
               onClick={handleSendNotification}
               disabled={isLoading}
-              className="px-8 py-3 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white font-semibold rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <div className="flex items-center">
@@ -302,41 +662,53 @@ const Notifications = () => {
       </div>
 
       {/* Notification History */}
-      <div className="bg-white rounded-2xl shadow-lg border border-slate-200/60 p-8">
-        <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center">
-          <FiBookOpen className="w-6 h-6 mr-3" />
-          Notification History
-        </h2>
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-semibold text-gray-900 flex items-center">
+            <FiBookOpen className="w-5 h-5 mr-2 text-blue-600" />
+            Notification History
+          </h2>
+          <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-md text-sm font-medium">
+            Last 10 messages
+          </span>
+        </div>
 
-        <div className="space-y-4">
+        <div className="space-y-3">
           {notifications.length === 0 ? (
-            <div className="text-center py-12 text-slate-500">
-              <FiBell className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p>No notifications sent yet</p>
+            <div className="text-center py-12 text-gray-500">
+              <FiBell className="w-12 h-12 mx-auto mb-4 opacity-30" />
+              <p className="font-medium">No notifications sent yet</p>
+              <p className="text-sm mt-1">Your notification history will appear here</p>
             </div>
           ) : (
-            notifications.map((notification) => (
-              <div key={notification._id} className="border border-slate-200 rounded-xl p-6 hover:shadow-md transition-shadow duration-200">
+            notifications.slice(0, 10).map((notification, index) => (
+              <div 
+                key={notification._id} 
+                className="border border-gray-200 rounded-lg p-5 hover:shadow-md hover:border-gray-300 transition-all bg-white"
+              >
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center space-x-3 mb-2">
-                      <h3 className="text-lg font-semibold text-slate-900">{notification.title}</h3>
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${(notification?.type || '').includes('teachers')
-                        ? 'bg-purple-100 text-purple-700'
-                        : 'bg-green-100 text-green-700'
-                        }`}>
+                      <h3 className="text-base font-semibold text-gray-900">{notification.title}</h3>
+                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        (notification?.type || '').includes('teachers')
+                          ? 'bg-purple-100 text-purple-700'
+                          : 'bg-green-100 text-green-700'
+                      }`}>
                         {notification.type || 'General'}
                       </span>
                     </div>
-                    <p className="text-slate-600 mb-3">{notification.message}</p>
-                    <p className="text-sm text-slate-500">
+                    <p className="text-gray-600 text-sm mb-3">{notification.message}</p>
+                    <p className="text-xs text-gray-500">
                       {formatTimestamp(notification.updatedAt || notification.createdAt || notification.timestamp)}
                     </p>
-
                   </div>
-                  <div className="ml-4">
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                  <div className="ml-4 flex flex-col items-end space-y-2">
+                    <span className="px-3 py-1 rounded-md text-xs font-medium bg-green-100 text-green-700">
                       {notification.status}
+                    </span>
+                    <span className="px-2 py-0.5 bg-gray-100 rounded text-xs font-medium text-gray-600">
+                      #{index + 1}
                     </span>
                   </div>
                 </div>
