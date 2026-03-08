@@ -2,6 +2,7 @@ import Notification from "../../model/NotifactionSchema.js";
 import Guide from "../../model/GuidSchema.js";
 import mongoose from "mongoose";
 import Student from "../../model/StudentSchema.js";
+import Group from "../../../Student/Models/GroupSchema.js";
 
 const requireAdmin = (req, res) => {
 
@@ -47,7 +48,13 @@ export const createNotification = async (req, res) => {
     }
 
     // Create notification
-    const notification = await Notification.create({ title, message, type });
+    const notification = await Notification.create({
+      title,
+      message,
+      type,
+      senderId: req.user.id.id,
+      senderName: req.user.id.name || "Admin",
+    });
 
     // Send to all guides/teachers
     const result = await Guide.updateMany(
@@ -149,6 +156,8 @@ export const createNotificationByTeacherId = async (req, res) => {
       title,
       message,
       type: "teachers",
+      senderId: req.user.id.id,
+      senderName: req.user.id.name || "Admin",
     });
 
     // 🟢 Attach to multiple teachers
@@ -214,7 +223,13 @@ export const createNotificationForStudent = async (req, res) => {
     }
 
     // Create notification in DB
-    const notification = await Notification.create({ title, message, type });
+    const notification = await Notification.create({
+      title,
+      message,
+      type,
+      senderId: req.user.id.id,
+      senderName: req.user.id.name || "Admin",
+    });
 
 
     await Student.updateMany(
@@ -254,8 +269,8 @@ export const createNotificationByStudentId = async (req, res) => {
     let { title, message, studentIds } = req.body;
 
 
-  
-    
+
+
 
 
 
@@ -310,6 +325,8 @@ export const createNotificationByStudentId = async (req, res) => {
       title,
       message,
       type: "students",
+      senderId: req.user.id.id,
+      senderName: req.user.id.name || "Admin",
     });
 
     // 🟢 Update multiple students
@@ -372,7 +389,10 @@ export const getNotifications = async (req, res) => {
       const notificationIds = guide.notificationId || [];
 
       const notifications = await Notification.find({
-        _id: { $in: notificationIds },
+        $or: [
+          { _id: { $in: notificationIds } },
+          { senderId: userId }
+        ]
       }).sort({ createdAt: -1 });
 
       return res.status(200).json({
@@ -397,7 +417,10 @@ export const getNotifications = async (req, res) => {
       const notificationIds = student.notificationId || [];
 
       const notifications = await Notification.find({
-        _id: { $in: notificationIds },
+        $or: [
+          { _id: { $in: notificationIds } },
+          { senderId: userId }
+        ]
       }).sort({ createdAt: -1 });
 
       return res.status(200).json({
@@ -565,12 +588,12 @@ export const createStudentNotificationByTeacher = async (req, res) => {
 
   try {
     let { message, studentIds } = req.body;
-      console.log(req.body,"body");
-      
+    console.log(req.body, "body");
+
     // 🔴 Validate array
     if (!Array.isArray(studentIds) || studentIds.length === 0) {
       console.log("id validation");
-      
+
       return res.status(400).json({
         success: false,
         message: "studentIds must be a non-empty array",
@@ -584,7 +607,7 @@ export const createStudentNotificationByTeacher = async (req, res) => {
 
     if (invalidIds.length > 0) {
       console.log("invalid length");
-      
+
       return res.status(400).json({
         success: false,
         message: "Some student IDs are invalid",
@@ -598,7 +621,7 @@ export const createStudentNotificationByTeacher = async (req, res) => {
 
     if (!message) {
       console.log("!message");
-      
+
       return res.status(400).json({
         success: false,
         message: "Title and message are required",
@@ -609,7 +632,7 @@ export const createStudentNotificationByTeacher = async (req, res) => {
 
     if (message.length < 3 || message.length > 500) {
       console.log("message length");
-      
+
       return res.status(400).json({
         success: false,
         message: "Message must be 5 to 500 characters",
@@ -618,9 +641,11 @@ export const createStudentNotificationByTeacher = async (req, res) => {
 
     // 🟢 Create notification ONCE
     const notification = await Notification.create({
-      title:"",
+      title: "",
       message,
       type: "students",
+      senderId: req.user.id.id,
+      senderName: req.user.id.name || "Guide",
     });
 
     // 🟢 Update multiple students
@@ -641,6 +666,58 @@ export const createStudentNotificationByTeacher = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Server error",
+    });
+  }
+};
+
+
+export const createGuideNotificationByStudent = async (req, res) => {
+  try {
+    const studentId = req.user.id.id;
+    const studentName = req.user.id.name;
+    const { message } = req.body;
+
+    if (!message || message.trim().length === 0) {
+      return res.status(400).json({ success: false, message: "Message is required" });
+    }
+
+    // Find the group this student belongs to
+    const group = await Group.findOne({ "selectedMembers._id": studentId });
+
+    if (!group || !group.teacherId) {
+      return res.status(404).json({
+        success: false,
+        message: "No guide assigned to your group yet."
+      });
+    }
+
+    const teacherId = group.teacherId;
+
+    // Create notification
+    const notification = await Notification.create({
+      title: "New message from student",
+      message: message.trim(),
+      type: "teachers",
+      senderId: studentId,
+      senderName: studentName || "Student",
+    });
+
+    // Add to guide's notification list
+    await Guide.findByIdAndUpdate(teacherId, {
+      $addToSet: { notificationId: notification._id }
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Message sent to your guide successfully",
+      data: notification
+    });
+
+  } catch (error) {
+    console.error("Error sending message to guide:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while sending message"
     });
   }
 };

@@ -535,7 +535,8 @@ const AddTask = () => {
                                     : "No submission date"}
                                 </p>                              </div>
                               <a
-                                href={`http://localhost:5000/${task.submittedFileName}`}
+                                // href={`http://localhost:5000/${task.submittedFileName}`}
+                                href={`http://localhost:5000/${task.submittedFilePath}`}
                                 target="_blank" rel="noopener noreferrer"
                                 className="inline-flex items-center gap-1.5 px-3 py-2 mt-3 rounded-lg text-sm font-semibold bg-blue-100 text-blue-800 border border-blue-300 hover:bg-blue-200 transition-colors"
                               >

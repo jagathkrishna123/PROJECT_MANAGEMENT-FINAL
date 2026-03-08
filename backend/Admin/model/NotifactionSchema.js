@@ -18,6 +18,14 @@ const notificationSchema = new mongoose.Schema(
       enum: ['admin', 'teachers', 'students'], // optional: limit values
       default: 'admin', // optional: default type
     },
+    senderId: {
+      type: mongoose.Schema.Types.ObjectId,
+      default: null,
+    },
+    senderName: {
+      type: String,
+      default: 'System',
+    },
   },
   {
     timestamps: true, // adds createdAt & updatedAt automatically

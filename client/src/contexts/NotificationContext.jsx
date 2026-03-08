@@ -333,6 +333,22 @@ export const NotificationProvider = ({ children }) => {
     }
   };
 
+  const sendStudentMessageToGuide = async (message) => {
+    try {
+      const res = await axios.post(
+        "/studentToGuideNotification",
+        { message },
+        { withCredentials: true }
+      );
+      if (res.data.success) {
+        setNotifications(prev => [res.data.data, ...prev]);
+      }
+      return res.data.data;
+    } catch (error) {
+      console.error("Send Message to Guide Error:", error.response?.data || error.message);
+    }
+  };
+
   const value = {
     // teacherNotifications,
     // studentNotifications,
@@ -347,6 +363,7 @@ export const NotificationProvider = ({ children }) => {
     markAllTeacherNotificationsAsRead,
     // markAllStudentNotificationsAsRead,
     sendGuideMessageToStudent,
+    sendStudentMessageToGuide,
     clearNotifications,
     refreshNotifications
   }

@@ -42,12 +42,25 @@ const MessageGuide = () => {
     alert('Message sent successfully!')
   }
 
-  const filteredNotifications = (notifications || []).filter(notification => {
+  // Get current user from localStorage to identify sent messages
+  const userData = localStorage.getItem('user')
+  const currentUser = userData ? JSON.parse(userData) : null
+  const currentUserId = currentUser?._id || currentUser?.id?.id
+
+  const filteredNotifications = (notifications || []).map(n => {
+    if (!n) return null
+    // If current user is the sender, mark as sent type for UI
+    if (n.senderId === currentUserId) {
+      return { ...n, type: 'sent', read: true }
+    }
+    return n
+  }).filter(notification => {
     if (!notification) return false
     if (filter === 'all') return true
     if (filter === 'unread') return !notification.read
     if (filter === 'admin') return notification.type === 'admin'
-    if (filter === 'student') return notification.type === 'student'
+    if (filter === 'student') return notification.type === 'student' || (notification.senderId && notification.senderId !== currentUserId)
+    if (filter === 'sent') return notification.type === 'sent'
     return true
   })
 
@@ -186,14 +199,15 @@ const MessageGuide = () => {
             { value: 'all', label: 'All', count: (notifications || []).length },
             { value: 'unread', label: 'Unread', count: unreadCount },
             { value: 'admin', label: 'Admin', count: (notifications || []).filter(n => n && n.type === 'admin').length },
-            { value: 'student', label: 'Students', count: (notifications || []).filter(n => n && n.type === 'student').length }
+            { value: 'student', label: 'Students', count: (notifications || []).filter(n => n && (n.type === 'student' || (n.senderId && n.senderId !== currentUserId))).length },
+            { value: 'sent', label: 'Sent', count: (notifications || []).filter(n => n && n.senderId === currentUserId).length }
           ].map((tab) => (
             <button
               key={tab.value}
               onClick={() => setFilter(tab.value)}
               className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${filter === tab.value
-                  ? 'bg-blue-100 text-blue-700 border-2 border-blue-200'
-                  : 'text-slate-600 hover:bg-slate-100 border-2 border-transparent'
+                ? 'bg-blue-100 text-blue-700 border-2 border-blue-200'
+                : 'text-slate-600 hover:bg-slate-100 border-2 border-transparent'
                 }`}
             >
               {tab.label} ({tab.count})
@@ -252,13 +266,13 @@ const MessageGuide = () => {
                           <FiClock className="w-4 h-4 mr-1" />
                           {formatTimestamp(notification.createdAt || notification.timestamp)}
                         </span>
-                        <span>From: {notification.sender || 'System'}</span>
+                        <span>From: {notification.senderName || notification.sender || 'System'}</span>
                         {notification.recipient && (
                           <span>To: {notification.recipient}</span>
                         )}
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${notification.priority === 'high' ? 'bg-red-100 text-red-700' :
-                            notification.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                              'bg-slate-100 text-slate-700'
+                          notification.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                            'bg-slate-100 text-slate-700'
                           }`}>
                           {notification.priority || 'normal'}
                         </span>

@@ -1,17 +1,18 @@
 import express from "express";
 import {
   createNotification,
-  createNotificationByTeacherId ,
-   createNotificationForStudent ,
-   createNotificationByStudentId,
-   createStudentNotificationByTeacher,
+  createNotificationByTeacherId,
+  createNotificationForStudent,
+  createNotificationByStudentId,
+  createStudentNotificationByTeacher,
+  createGuideNotificationByStudent,
   getNotifications,
   // getSingleNotification,
   // updateNotification,
   // deleteNotification,
 } from "../../Admin/controls/Notification/notification.js";
 
-import { verifyToken } from "../../middleware/verifyToken.js"; 
+import { verifyToken } from "../../middleware/verifyToken.js";
 // 👆 your JWT middleware that sets req.user
 
 const router = express.Router();
@@ -19,16 +20,17 @@ const router = express.Router();
 /* ================= ROUTES ================= */
 
 /* CREATE (Admin only) */
-router.post("/createNotification",verifyToken, createNotification);
+router.post("/createNotification", verifyToken, createNotification);
 
-router.post("/specificTeacherNotification", verifyToken, createNotificationByTeacherId );
+router.post("/specificTeacherNotification", verifyToken, createNotificationByTeacherId);
 
-router.post("/createStudentNotification", verifyToken,createNotificationForStudent)
+router.post("/createStudentNotification", verifyToken, createNotificationForStudent)
 
-router.post("/createSpecificNotification", verifyToken,createNotificationByStudentId)
+router.post("/createSpecificNotification", verifyToken, createNotificationByStudentId)
 
-router.post("/createNotificationByTeacher",verifyToken,createStudentNotificationByTeacher)
+router.post("/createNotificationByTeacher", verifyToken, createStudentNotificationByTeacher)
 
+router.post("/studentToGuideNotification", verifyToken, createGuideNotificationByStudent);
 
 /* GET ALL (User/Admin) */
 router.get("/getNotification", verifyToken, getNotifications);

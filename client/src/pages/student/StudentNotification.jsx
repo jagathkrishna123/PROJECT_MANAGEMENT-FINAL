@@ -3,10 +3,13 @@ import { FiBell, FiClock, FiCheckCircle, FiAlertCircle, FiInfo } from 'react-ico
 import { useNotifications } from '../../contexts/NotificationContext'
 
 const StudentNotification = () => {
-  const { studentNotifications, markStudentNotificationAsRead, markAllStudentNotificationsAsRead, Notifications } = useNotifications()
+  const { studentNotifications, markStudentNotificationAsRead, markAllStudentNotificationsAsRead, Notifications, sendStudentMessageToGuide } = useNotifications()
 
   const [filter, setFilter] = useState('all')
   const [isLoading, setIsLoading] = useState(false)
+  const [showMessageBox, setShowMessageBox] = useState(false)
+  const [message, setMessage] = useState('')
+  const [isSending, setIsSending] = useState(false)
 
   // Use notifications from context
   const notifications = Notifications
@@ -19,10 +22,23 @@ const StudentNotification = () => {
     markAllStudentNotificationsAsRead()
   }
 
-  const filteredNotifications = notifications.filter(notification => {
+  // Get current user from localStorage to identify sent messages
+  const userData = localStorage.getItem('user')
+  const currentUser = userData ? JSON.parse(userData) : null
+  const currentUserId = currentUser?._id || currentUser?.id?.id
+
+  const filteredNotifications = (notifications || []).map(n => {
+    if (!n) return null
+    if (n.senderId === currentUserId) {
+      return { ...n, type: 'sent', read: true }
+    }
+    return n
+  }).filter(notification => {
+    if (!notification) return false
     if (filter === 'all') return true
     if (filter === 'unread') return !notification.read
     if (filter === 'important') return notification.type === 'important'
+    if (filter === 'sent') return notification.type === 'sent'
     return true
   })
 
@@ -36,6 +52,8 @@ const StudentNotification = () => {
         return <FiClock className="w-5 h-5 text-yellow-500" />
       case 'update':
         return <FiInfo className="w-5 h-5 text-blue-500" />
+      case 'sent':
+        return <FiSend className="w-5 h-5 text-purple-500" />
       default:
         return <FiBell className="w-5 h-5 text-slate-500" />
     }
@@ -49,6 +67,8 @@ const StudentNotification = () => {
         return 'border-yellow-200 bg-yellow-50'
       case 'update':
         return 'border-blue-200 bg-blue-50'
+      case 'sent':
+        return 'border-purple-200 bg-purple-50'
       default:
         return 'border-slate-200 bg-slate-50'
     }
@@ -69,6 +89,25 @@ const StudentNotification = () => {
 
   const unreadCount = notifications.filter(n => !n.read).length
 
+  const handleSendMessage = async () => {
+    if (!message.trim()) return
+    setIsSending(true)
+    try {
+      const result = await sendStudentMessageToGuide(message)
+      if (result) {
+        alert('Message sent to guide successfully!')
+        setMessage('')
+        setShowMessageBox(false)
+      } else {
+        alert('Failed to send message. Make sure you have an assigned guide.')
+      }
+    } catch (error) {
+      alert('Error sending message')
+    } finally {
+      setIsSending(false)
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-96">
@@ -86,38 +125,86 @@ const StudentNotification = () => {
       <div className="bg-white rounded-2xl shadow-lg border border-slate-200/60 p-8 mb-8">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-4">
-            <div className="w-6 h-6 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center">
-              <FiBell className="w-4 h-4 text-white" />
+            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center">
+              <FiBell className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Notifications</h1>
-              <p className="text-slate-600 text-sm md:text-xl">Stay updated with important announcements and messages</p>
+              <h1 className="text-3xl font-bold text-slate-900">Notifications</h1>
+              <p className="text-slate-600">Stay updated and communicate with your guide</p>
             </div>
           </div>
 
-          {unreadCount > 0 && (
+          <div className="flex space-x-3">
             <button
-              onClick={markAllAsRead}
-              className="px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white text-sm font-medium rounded-xl transition-all duration-200 transform hover:scale-105"
+              onClick={() => setShowMessageBox(!showMessageBox)}
+              className="px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 text-white text-sm font-medium rounded-xl transition-all duration-200 transform hover:scale-105"
             >
-              Mark All Read ({unreadCount})
+              {showMessageBox ? 'Cancel' : 'Message Guide'}
             </button>
-          )}
+
+            {unreadCount > 0 && (
+              <button
+                onClick={markAllAsRead}
+                className="px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white text-sm font-medium rounded-xl transition-all duration-200 transform hover:scale-105"
+              >
+                Mark All Read ({unreadCount})
+              </button>
+            )}
+          </div>
         </div>
+
+        {/* Message Box */}
+        {showMessageBox && (
+          <div className="bg-slate-50/50 rounded-xl p-6 border border-slate-200/40 mb-6 animate-in fade-in slide-in-from-top-4 duration-300">
+            <h3 className="text-lg font-semibold text-slate-900 mb-4">Send Message to Guide</h3>
+            <div className="space-y-4">
+              <textarea
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Type your message to your guide here..."
+                rows={4}
+                className="w-full px-4 py-3 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 resize-none bg-white"
+              />
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setShowMessageBox(false)}
+                  className="px-6 py-2 border border-slate-300 text-slate-700 hover:bg-slate-50 font-medium rounded-xl transition-colors duration-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSendMessage}
+                  disabled={isSending || !message.trim()}
+                  className={`px-6 py-2 bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-700 hover:to-emerald-600 text-white font-medium rounded-xl transition-all duration-200 transform hover:scale-105 flex items-center space-x-2 ${isSending || !message.trim() ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  {isSending ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>Sending...</span>
+                    </>
+                  ) : (
+                    <span>Send Message</span>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Filter Tabs */}
         <div className="flex space-x-2">
           {[
-            { value: 'all', label: 'All', count: notifications.length },
+            { value: 'all', label: 'All', count: (notifications || []).length },
             { value: 'unread', label: 'Unread', count: unreadCount },
-            { value: 'important', label: 'Important', count: notifications.filter(n => n.type === 'important').length }
+            { value: 'important', label: 'Important', count: (notifications || []).filter(n => n && n.type === 'important').length },
+            { value: 'sent', label: 'Sent', count: (notifications || []).filter(n => n && n.senderId === currentUserId).length }
           ].map((tab) => (
             <button
               key={tab.value}
               onClick={() => setFilter(tab.value)}
               className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${filter === tab.value
-                  ? 'bg-blue-100 text-blue-700 border-2 border-blue-200'
-                  : 'text-slate-600 hover:bg-slate-100 border-2 border-transparent'
+                ? 'bg-blue-100 text-blue-700 border-2 border-blue-200'
+                : 'text-slate-600 hover:bg-slate-100 border-2 border-transparent'
                 }`}
             >
               {tab.label} ({tab.count})
@@ -160,6 +247,11 @@ const StudentNotification = () => {
                         {!notification.read && (
                           <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                         )}
+                        {notification.type === 'sent' && (
+                          <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
+                            Sent
+                          </span>
+                        )}
                       </div>
 
                       <p className={`mb-3 leading-relaxed ${notification.read ? 'text-slate-600' : 'text-slate-700'
@@ -172,11 +264,11 @@ const StudentNotification = () => {
                           <FiClock className="w-4 h-4 mr-1" />
                           {formatTimestamp(notification.timestamp)}
                         </span>
-                        <span>From: {notification.sender}</span>
+                        <span>From: {notification.senderName || notification.sender || 'System'}</span>
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${notification.type === 'important' ? 'bg-red-100 text-red-700' :
-                            notification.type === 'reminder' ? 'bg-yellow-100 text-yellow-700' :
-                              notification.type === 'update' ? 'bg-blue-100 text-blue-700' :
-                                'bg-slate-100 text-slate-700'
+                          notification.type === 'reminder' ? 'bg-yellow-100 text-yellow-700' :
+                            notification.type === 'update' ? 'bg-blue-100 text-blue-700' :
+                              'bg-slate-100 text-slate-700'
                           }`}>
                           {notification.type}
                         </span>
