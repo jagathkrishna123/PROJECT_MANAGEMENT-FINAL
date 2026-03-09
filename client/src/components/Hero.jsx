@@ -209,10 +209,10 @@ const Hero = () => {
               Explore Projects
               <Icon d={['M5 12h14', 'm12 5 7 7-7 7']} size={18} />
             </a>
-            <button className="btn-outline btn-lg">
+            {/* <button className="btn-outline btn-lg">
               <Icon d={['m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5', 'M2 6h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z']} size={18} />
               Watch Demo
-            </button>
+            </button> */}
           </div>
 
           {/* Dashboard mockup */}

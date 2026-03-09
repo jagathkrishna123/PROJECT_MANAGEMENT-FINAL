@@ -87,7 +87,7 @@ const Sidebar = () => {
           <SidebarLink
             to="/admin/academic-setup"
             icon={HiAcademicCap}
-            label="Setup"
+            label="Departments"
           />
           <SidebarLink
             to="/admin/students"
